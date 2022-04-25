@@ -4,6 +4,7 @@ import argparse
 import statistics
 import os
 import itertools
+import scipy.signal as sig
 
 
 def getPrimerDirection(Primer_ID):
@@ -74,7 +75,7 @@ def bed_to_edge(fn):
             if row["direction"] == "+":
                 amplicon_edges[amplicon]["s"].append(row.start)
             else:
-                amplicon_edges[amplicon]["e"].append(row.start)
+                amplicon_edges[amplicon]["e"].append(row.end)
 
     return amplicon_edges
 
@@ -108,12 +109,27 @@ def bedcheck(args, bed_edges, edge_counts):
     return hits
 
 
+def peak_bedcheck(args, bed_edges, edge_peaks):
+    positions = [
+        edge_dict["s"] + edge_dict["e"] for amplicon, edge_dict in bed_edges.items()
+    ]
+    positions = set(itertools.chain.from_iterable(positions))
+
+    return len(positions.intersection(edge_peaks))
+
+
+def find_peaks(edge_counts):
+    peaks, _ = sig.find_peaks(edge_counts["count"])
+    return set(peaks)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--bedfiles", nargs="+", type=os.path.abspath, action="append")
     parser.add_argument("--edge-counts", type=argparse.FileType("r"), default=sys.stdin)
     parser.add_argument("--bg-range", type=int, default=50)
     parser.add_argument("--deviations", type=int, default=3)
+    parser.add_argument("--report", action="store_true")
     args = parser.parse_args()
 
     args.bedfiles = [file for file in args.bedfiles[0] if str(file).endswith("bed")]
@@ -128,13 +144,23 @@ def main():
         args.edge_counts, sep="\t", names=["pos", "count"], index_col="pos"
     )
 
+    peaks = find_peaks(edge_counts)
+
+    # bed_scores = {
+    #     key: bedcheck(args, value, edge_counts) for key, value in bed_edges.items()
+    # }
+
     bed_scores = {
-        key: bedcheck(args, value, edge_counts) for key, value in bed_edges.items()
+        key: peak_bedcheck(args, value, peaks) for key, value in bed_edges.items()
     }
 
     winner = max(bed_scores, key=bed_scores.get)
 
-    print(winner, file=sys.stdout)
+    if not args.report:
+        print(winner, file=sys.stdout)
+    else:
+        for scheme, score in bed_scores.items():
+            print(f"{scheme} - {score}", file=sys.stdout)
 
 
 main()
