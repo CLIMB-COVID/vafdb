@@ -1,0 +1,12 @@
+name: vafdb-server
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - gunicorn
+  - uvicorn
+  - fastapi
+  - sqlmodel
+  - pip
+  - pip:
+    - alembic
