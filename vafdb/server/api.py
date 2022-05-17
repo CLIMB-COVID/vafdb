@@ -69,3 +69,87 @@ def add(request : Request, metadata : MetadataRecord, vafs : List[VAFRecord], se
     else:
         # Forbidden
         raise HTTPException(status_code=403)
+
+
+@vafdb_api.get("/get/metadata/central_sample_id/{central_sample_id}")
+def get_metadata_central_sample_id(central_sample_id : str, session : Session = Depends(get_session)):
+    statement = select(MetadataRecord).where(MetadataRecord.central_sample_id == central_sample_id)
+    records = session.exec(statement).all()
+    return records
+
+
+@vafdb_api.get("/get/metadata/run_name/{run_name}")
+def get_metadata_run_name(run_name : str, session : Session = Depends(get_session)):
+    statement = select(MetadataRecord).where(MetadataRecord.run_name == run_name)
+    records = session.exec(statement).all()
+    return records
+
+
+@vafdb_api.get("/get/metadata/pag_name/{pag_name}")
+def get_metadata_pag_name(pag_name : str, session : Session = Depends(get_session)):
+    statement = select(MetadataRecord).where(MetadataRecord.pag_name == pag_name)
+    records = session.exec(statement).all()
+    return records
+
+
+@vafdb_api.get("/get/metadata/published_date/{published_date}")
+def get_metadata_published_date(published_date : str, session : Session = Depends(get_session)):
+    statement = select(MetadataRecord).where(MetadataRecord.published_date == published_date)
+    records = session.exec(statement).all()
+    return records
+
+
+@vafdb_api.get("/get/metadata/fasta_path/{fasta_path}")
+def get_metadata_fasta_path(fasta_path : str, session : Session = Depends(get_session)):
+    statement = select(MetadataRecord).where(MetadataRecord.fasta_path == fasta_path)
+    records = session.exec(statement).all()
+    return records
+
+
+@vafdb_api.get("/get/metadata/bam_path/{bam_path}")
+def get_metadata_bam_path(bam_path : str, session : Session = Depends(get_session)):
+    statement = select(MetadataRecord).where(MetadataRecord.bam_path == bam_path)
+    records = session.exec(statement).all()
+    return records
+
+
+@vafdb_api.get("/get/vafs/central_sample_id/{central_sample_id}")
+def get_vafs_central_sample_id(central_sample_id : str, session : Session = Depends(get_session)):
+    statement = select(MetadataRecord, VAFRecord).where(MetadataRecord.central_sample_id == central_sample_id).where(MetadataRecord.id == VAFRecord.metadata_id)
+    records = session.exec(statement).all()
+    return records
+
+
+@vafdb_api.get("/get/vafs/run_name/{run_name}")
+def get_vafs_run_name(run_name : str, session : Session = Depends(get_session)):
+    statement = select(MetadataRecord, VAFRecord).where(MetadataRecord.run_name == run_name).where(MetadataRecord.id == VAFRecord.metadata_id)
+    records = session.exec(statement).all()
+    return records
+
+
+@vafdb_api.get("/get/vafs/pag_name/{pag_name}")
+def get_vafs_pag_name(pag_name : str, session : Session = Depends(get_session)):
+    statement = select(MetadataRecord, VAFRecord).where(MetadataRecord.pag_name == pag_name).where(MetadataRecord.id == VAFRecord.metadata_id)
+    records = session.exec(statement).all()
+    return records
+
+
+@vafdb_api.get("/get/vafs/published_date/{published_date}")
+def get_vafs_published_date(published_date : str, session : Session = Depends(get_session)):
+    statement = select(MetadataRecord, VAFRecord).where(MetadataRecord.published_date == published_date).where(MetadataRecord.id == VAFRecord.metadata_id)
+    records = session.exec(statement).all()
+    return records
+
+
+@vafdb_api.get("/get/vafs/fasta_path/{fasta_path}")
+def get_vafs_fasta_path(fasta_path : str, session : Session = Depends(get_session)):
+    statement = select(MetadataRecord, VAFRecord).where(MetadataRecord.fasta_path == fasta_path).where(MetadataRecord.id == VAFRecord.metadata_id)
+    records = session.exec(statement).all()
+    return records
+
+
+@vafdb_api.get("/get/vafs/bam_path/{bam_path}")
+def get_vafs_bam_path(bam_path : str, session : Session = Depends(get_session)):
+    statement = select(MetadataRecord, VAFRecord).where(MetadataRecord.bam_path == bam_path).where(MetadataRecord.id == VAFRecord.metadata_id)
+    records = session.exec(statement).all()
+    return records
