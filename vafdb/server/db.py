@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, create_engine
-from .models import MetadataRecord, VariantAlleleRecord
+from .models import MetadataRecord, VAFRecord
 import os
 
 

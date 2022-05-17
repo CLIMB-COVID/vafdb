@@ -1,7 +1,8 @@
 from fastapi import Depends, FastAPI, Request, HTTPException
 from sqlmodel import Session, select, sql
-from .models import MetadataRecord, VariantAlleleRecord
+from .models import MetadataRecord, VAFRecord
 from .db import make_engine
+from typing import List
 import os
 
 
@@ -18,42 +19,50 @@ def get_session():
 
 
 @vafdb_api.post("/add")
-def add(request : Request, metadata_record : MetadataRecord, va_record : VariantAlleleRecord, session : Session = Depends(get_session)):
+def add(request : Request, metadata : MetadataRecord, vafs : List[VAFRecord], session : Session = Depends(get_session)):
     #If the incoming request has the required key to add records
-    if request.headers.get('api_key') == os.getenv('VAFDB_ADD_KEY'):    
-        # Get current record with given pag_name (if it exists)
-        statement = select(MetadataRecord).where(MetadataRecord.pag_name == metadata_record.pag_name)
+    if request.headers.get('vafdb_add_key') == os.getenv('VAFDB_ADD_KEY'):    
+        # Get current record with given central_sample_id and run_name (if it exists)
+        statement = select(MetadataRecord).where(
+            MetadataRecord.central_sample_id == metadata.central_sample_id, 
+            MetadataRecord.run_name == metadata.run_name
+        )
+
         # NOTE: I am assuming there's only one matching record
-        existing_metadata_record = session.exec(statement).first()
+        existing_metadata = session.exec(statement).first()
 
-        if existing_metadata_record:
+        if existing_metadata:
             # Update the current record with new record data
-            for attr, val in metadata_record.dict(exclude_unset=True).items():
-                setattr(existing_metadata_record, attr, val)
-            metadata_record = existing_metadata_record
+            for attr, val in metadata.dict(exclude_unset=True).items():
+                setattr(existing_metadata, attr, val)
+            metadata = existing_metadata
 
-        # Add model instance to the session
-        session.add(metadata_record)
-        # Commit the changes (save to database)
+        # Add model instance to the session, then save to the database
+        session.add(metadata)
         session.commit()
 
-        if metadata_record.id is not None:
-            # Get current record with given pag_name (if it exists)
-            statement = select(VariantAlleleRecord).where(VariantAlleleRecord.metadata_id == metadata_record.id, VariantAlleleRecord.position == va_record.position)
-            # NOTE: I am assuming there's only one matching record
-            existing_va_record = session.exec(statement).first()
+        if metadata.id is not None:
+            for vaf in vafs:
+                # Get current record with given metadata id and position (if it exists)
+                statement = select(VAFRecord).where(
+                    VAFRecord.metadata_id == metadata.id, 
+                    VAFRecord.position == vaf.position
+                )
 
-            if existing_va_record:
-                # Update the current record with new record data
-                for attr, val in va_record.dict(exclude_unset=True).items():
-                    setattr(existing_va_record, attr, val)
-                va_record = existing_va_record
-            else:
-                va_record.metadata_id = metadata_record.id
-            # Add model instance to the session
-            session.add(va_record)
-            # Commit the changes (save to database)
-            session.commit()
+                # NOTE: I am assuming there's only one matching record
+                existing_vaf = session.exec(statement).first()
+
+                if existing_vaf:
+                    # Update the current record with new record data
+                    for attr, val in vaf.dict(exclude_unset=True).items():
+                        setattr(existing_vaf, attr, val)
+                    vaf = existing_vaf
+                else:
+                    vaf.metadata_id = metadata.id
+                
+                # Add model instance to the session, then save to the database
+                session.add(vaf)
+                session.commit()
 
         # Acknowledge new record
         return {'detail' : 'Record created'}
