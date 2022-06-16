@@ -39,8 +39,8 @@ class MetadataRecordSerializer(serializers.ModelSerializer):
         ]
     
     def create(self, validated_data):
-        vafs_data = validated_data.pop("vafs")
+        vafs = validated_data.pop("vafs")
         metadata = MetadataRecord.objects.create(**validated_data)
-        for vaf_data in vafs_data:
-            VAFRecord.objects.create(metadata_record=metadata, **vaf_data)
+        for vaf in vafs:
+            VAFRecord.objects.create(metadata_record=metadata, **vaf)
         return metadata
