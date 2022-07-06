@@ -13,6 +13,7 @@ def create(url, args):
     # Run basecount on the BAM
     bc = basecount.BaseCount(record["bam_path"], min_base_quality=10, min_mapping_quality=10)
 
+    # Mean entropy check
     if bc.mean_entropy(min_coverage=20) <= 0.12:
         # Format metadata that will be emitted as JSON
         metadata = {
@@ -50,16 +51,23 @@ def create(url, args):
         # Calculate number of vafs and upload
         metadata["num_vafs"] = len(metadata["vafs"])
         response = requests.post(endpoint, json=metadata)
-        print(response)
+        print(f"{response}: {response.reason}")
+        if not response.ok:
+            print(response.text)
 
 
 def main():
     parser = argparse.ArgumentParser()
     action = parser.add_subparsers(dest="action")
+    
     create_parser = action.add_parser("create")
     create_parser.add_argument("data")
     create_parser.add_argument("--host", default="localhost")
     create_parser.add_argument("--port", default="8000")
+    
+    get_parser = action.add_parser("get")
+    
+
     args = parser.parse_args()
 
     url = f"http://{args.host}:{args.port}"

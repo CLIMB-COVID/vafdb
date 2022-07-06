@@ -21,9 +21,19 @@ class MetadataRecord(models.Model):
 
 
 class VAFRecord(models.Model):
-    metadata_record = models.ForeignKey(MetadataRecord, on_delete=models.CASCADE, related_name="vafs") # TODO why is primary key also foreign key
+    metadata_record = models.ForeignKey(
+        MetadataRecord, 
+        on_delete=models.CASCADE, 
+        related_name="vafs"
+    )
     reference = models.CharField(max_length=100)
     position = models.IntegerField()
+    coverage = models.IntegerField()
+    num_a = models.IntegerField()
+    num_c = models.IntegerField()
+    num_g = models.IntegerField()
+    num_t = models.IntegerField()
+    num_ds = models.IntegerField()
     # consensus_base = models.CharField(
     #     max_length=1,
     #     choices=(
@@ -34,12 +44,6 @@ class VAFRecord(models.Model):
     #         ("N", "N")
     #     )
     # )
-    coverage = models.IntegerField()
-    num_a = models.IntegerField()
-    num_c = models.IntegerField()
-    num_g = models.IntegerField()
-    num_t = models.IntegerField()
-    num_ds = models.IntegerField()
 
     class Meta:
         unique_together = ["metadata_record", "reference", "position"]
