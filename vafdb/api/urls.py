@@ -10,4 +10,7 @@ urlpatterns = [
     path("get/published_name/<published_name>/", views.get_published_name),
     path("get/position/<position>/", views.get_position),
     path("delete/<published_name>/", views.delete),
+
+    # Proposed new url
+    # path("vafs", views.get_vafs)
 ]
