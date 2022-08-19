@@ -14,7 +14,7 @@ def create(url, args):
     bc = basecount.BaseCount(record["bam_path"], min_base_quality=10, min_mapping_quality=10)
 
     # Mean entropy check
-    if bc.mean_entropy(min_coverage=20) <= 0.12:
+    if bc.mean_entropy(min_coverage=20) <= 0.1:
         # Format metadata that will be emitted as JSON
         metadata = {
             "pathogen" : record["pathogen"],
@@ -59,15 +59,10 @@ def create(url, args):
 def main():
     parser = argparse.ArgumentParser()
     action = parser.add_subparsers(dest="action")
-    
     create_parser = action.add_parser("create")
     create_parser.add_argument("data")
     create_parser.add_argument("--host", default="localhost")
     create_parser.add_argument("--port", default="8000")
-    
-    get_parser = action.add_parser("get")
-    
-
     args = parser.parse_args()
 
     url = f"http://{args.host}:{args.port}"
@@ -75,7 +70,7 @@ def main():
     actions = {
         "create" : create
     }
-    # Execute corresponding function for the chosen action subparser
+
     actions[args.action](url, args)
 
 

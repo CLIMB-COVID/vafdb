@@ -11,16 +11,7 @@ class VAFRecordSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VAFRecord
-        fields = (
-            "reference", 
-            "position", 
-            "coverage", 
-            "num_a",
-            "num_c",
-            "num_g",
-            "num_t",
-            "num_ds"
-        )
+        exclude = ("id", "metadata_record", )
 
     # Additional custom validation
     def validate(self, data):
@@ -43,21 +34,7 @@ class MetadataRecordSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MetadataRecord
-        fields = [
-            "pathogen",
-            "central_sample_id",
-            "run_name",
-            "published_name",
-            "collection_date",
-            "published_date",
-            "modified_date",
-            "num_vafs",
-            "fasta_path",
-            "bam_path",
-            "lineage",
-            "primer_scheme",
-            "vafs"
-        ]
+        exclude = ("id", )
 
     # Additional custom validation
     def validate(self, data):
