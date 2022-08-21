@@ -1,9 +1,10 @@
 from django.db import models
 
-# Create your models here.
+
 
 # TODO: All max_lengths are pretty arbitrary at the moment
-class MetadataRecord(models.Model):
+# TODO: Lineage
+class Metadata(models.Model):
     pathogen = models.CharField(max_length=50)
     central_sample_id = models.CharField(max_length=50)
     run_name = models.CharField(max_length=100)
@@ -15,28 +16,18 @@ class MetadataRecord(models.Model):
     fasta_path = models.CharField(max_length=500)
     bam_path = models.TextField(max_length=500)
     primer_scheme = models.CharField(max_length=10)
-    # TODO: lineage
+    created = models.DateTimeField(null=True) # TODO: De-null
 
     class Meta:
         unique_together = ["central_sample_id", "run_name"]
 
 
-# TODO: How do we want to structure this.
-# NOTE: Could have ref in metadata? ref in its own table?
-# class Reference(models.Model):
-#     metadata = models.ForeignKey(
-#         MetadataRecord, 
-#         on_delete=models.CASCADE, 
-#         related_name="vafs"
-#     )
-#     reference = models.CharField(max_length=50)
 
-
-class VAFRecord(models.Model):
-    metadata_record = models.ForeignKey(
-        MetadataRecord, 
+class VAF(models.Model):
+    metadata = models.ForeignKey(
+        Metadata, 
         on_delete=models.CASCADE, 
-        related_name="vafs"
+        related_name="vaf"
     )
     reference = models.CharField(max_length=50)
     position = models.IntegerField()
@@ -46,16 +37,18 @@ class VAFRecord(models.Model):
     num_g = models.IntegerField()
     num_t = models.IntegerField()
     num_ds = models.IntegerField()
-    # consensus_base = models.CharField(
-    #     max_length=1,
-    #     choices=(
-    #         ("A", "A"),
-    #         ("C", "C"),
-    #         ("G", "G"),
-    #         ("T", "T"),
-    #         ("N", "N")
-    #     )
-    # )
+    entropy = models.FloatField(null=True) # TODO: De-null
 
     class Meta:
-        unique_together = ["metadata_record", "reference", "position"]
+        unique_together = ["metadata", "reference", "position"]
+
+
+
+# TODO: Could have reference in its own table?
+# class Reference(models.Model):
+#     metadata = models.ForeignKey(
+#         Metadata, 
+#         on_delete=models.CASCADE, 
+#         related_name="vafs"
+#     )
+#     reference = models.CharField(max_length=50)
