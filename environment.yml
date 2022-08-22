@@ -10,4 +10,5 @@ dependencies:
     - requests
     - pysam
     - numpy
+    - pandas
     - git+https://github.com/tombch/basecount@cdf987701ca0c075bad0251b9f4c949c74a4517c
