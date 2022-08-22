@@ -3,5 +3,5 @@ from . import views
 
 
 urlpatterns = [
-    path("", views.CreateGetVAFView.as_view())
+    path("", views.CreateGetVAFView.as_view()),
 ]
