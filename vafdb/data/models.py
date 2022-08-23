@@ -2,30 +2,28 @@ from django.db import models
 
 
 
-# TODO: All max_lengths are pretty arbitrary at the moment
-# TODO: Lineage
 class Metadata(models.Model):
-    pathogen = models.CharField(max_length=50)
-    central_sample_id = models.CharField(max_length=50)
-    run_name = models.CharField(max_length=100)
-    published_name = models.CharField(max_length=100, unique=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    sequencing_sample_id = models.TextField(unique=True)
+    site_code = models.TextField()
+    bam_path = models.TextField()
     collection_date = models.DateField()
     published_date = models.DateField(auto_now_add=True)
-    created = models.DateTimeField(auto_now_add=True)
-    last_modified = models.DateTimeField(auto_now=True)
-    num_vafs = models.IntegerField()
-    fasta_path = models.CharField(max_length=500)
-    bam_path = models.TextField(max_length=500)
-    primer_scheme = models.CharField(max_length=10)
 
-    class Meta:
-        unique_together = ["central_sample_id", "run_name"]
+    num_reads = models.IntegerField(null=True)
+    num_vafs = models.IntegerField(null=True)
+    mean_coverage = models.FloatField(null=True)
+    mean_entropy = models.FloatField(null=True)
+    references = models.TextField(null=True)
 
 
 
 class VAF(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+
     metadata = models.ForeignKey(
-        Metadata, 
+        Metadata,
         on_delete=models.CASCADE, 
         related_name="vaf",
         db_index=True
@@ -42,15 +40,8 @@ class VAF(models.Model):
     secondary_entropy = models.FloatField()
 
     class Meta:
-        unique_together = ["metadata", "reference", "position"]
-
-
-
-# TODO: Could have reference in its own table?
-# class Reference(models.Model):
-#     metadata = models.ForeignKey(
-#         Metadata, 
-#         on_delete=models.CASCADE, 
-#         related_name="vafs"
-#     )
-#     reference = models.CharField(max_length=50)
+        unique_together = [
+            "metadata", 
+            "reference", 
+            "position"
+        ]

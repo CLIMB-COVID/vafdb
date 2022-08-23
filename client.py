@@ -46,13 +46,6 @@ class VAFDBClient():
             raise Exception("Must provide exactly one of the following: metadata dict, tsv file or csv file")
 
         if metadata:
-            # Run basecount on the BAM
-            bc = basecount.BaseCount(
-                metadata["bam_path"], 
-                min_base_quality=10, 
-                min_mapping_quality=10
-            )
-
             # Format metadata that will be emitted as JSON
             metadata = {
                 "pathogen" : metadata["pathogen"],
@@ -60,37 +53,11 @@ class VAFDBClient():
                 "run_name" : metadata["run_name"],
                 "published_name" : metadata["published_name"],
                 "collection_date" : metadata["collection_date"],
-                "fasta_path" : metadata["fasta_path"],
                 "bam_path" : metadata["bam_path"],
                 "lineage" : metadata["lineage"],
                 "primer_scheme" : metadata["primer_scheme"],
-                "vaf" : [],
-                "num_vafs" : 0,
             }
 
-            # Format vafs within metadata JSON
-            for record in bc.records():
-                max_pc = max(record["pc_a"], record["pc_c"], record["pc_g"], record["pc_t"], record["pc_ds"])
-                if record["coverage"] >= 20:
-                    if max_pc <= 90 or (90 < max_pc <= 95 and record["secondary_entropy"] <= 0.4):
-                        metadata["vaf"].append(
-                            {
-                                "reference" : record["reference"],
-                                "position" : record["position"],
-                                "coverage" : record["coverage"],
-                                "num_a" : record["num_a"],
-                                "num_c" : record["num_c"],
-                                "num_g" : record["num_g"],
-                                "num_t" : record["num_t"],
-                                "num_ds" : record["num_ds"],
-                                "entropy" : record["entropy"],
-                                "secondary_entropy" : record["secondary_entropy"]
-                            }
-                        )
-
-            # Calculate number of vafs
-            metadata["num_vafs"] = len(metadata["vaf"])
-            
             # Send data
             response = requests.post(
                 self.endpoints["create"], 
@@ -181,6 +148,7 @@ def main():
                 if fields.get(f) is None:
                     fields[f] = []
                 fields[f].append(v)
+                
         client.get(fields)
 
 
