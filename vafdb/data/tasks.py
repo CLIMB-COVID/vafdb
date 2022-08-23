@@ -1,5 +1,6 @@
 from celery import shared_task
 from django.conf import settings
+from django.db import transaction
 from .models import Metadata, VAF
 import basecount
 
@@ -8,36 +9,36 @@ import basecount
 def create_vafs(metadata_id, bam_path):
     metadata = Metadata.objects.get(id=metadata_id)
     try:
-        bc = basecount.BaseCount(
-            bam_path, 
-            min_base_quality=10, 
-            min_mapping_quality=10
-        )
+        with transaction.atomic():
+            bc = basecount.BaseCount(
+                bam_path, 
+                min_base_quality=10, 
+                min_mapping_quality=10
+            )
 
-        num_vafs = 0
-        for record in bc.records():
-            vaf = {
-                "reference" : record["reference"],
-                "position" : record["position"],
-                "coverage" : record["coverage"],
-                "num_a" : record["num_a"],
-                "num_c" : record["num_c"],
-                "num_g" : record["num_g"],
-                "num_t" : record["num_t"],
-                "num_ds" : record["num_ds"],
-                "entropy" : round(record["entropy"], settings.FLOATFIELD_DECIMAL_PLACES),
-                "secondary_entropy" : round(record["secondary_entropy"], settings.FLOATFIELD_DECIMAL_PLACES)
-            }
-            VAF.objects.create(metadata=metadata, **vaf)
-            num_vafs += 1
-        
-        metadata.num_reads = bc.num_reads()
-        metadata.mean_coverage = round(bc.mean_coverage(), settings.FLOATFIELD_DECIMAL_PLACES)
-        metadata.num_vafs = num_vafs
-        metadata.mean_entropy = round(bc.mean_entropy(), settings.FLOATFIELD_DECIMAL_PLACES)
-        metadata.references = ",".join(bc.references)
-        metadata.save(update_fields = ["num_reads", "mean_coverage", "num_vafs", "mean_entropy", "references"])
-
+            num_vafs = 0
+            for record in bc.records():
+                vaf = {
+                    "reference" : record["reference"],
+                    "position" : record["position"],
+                    "coverage" : record["coverage"],
+                    "num_a" : record["num_a"],
+                    "num_c" : record["num_c"],
+                    "num_g" : record["num_g"],
+                    "num_t" : record["num_t"],
+                    "num_ds" : record["num_ds"],
+                    "entropy" : round(record["entropy"], settings.FLOATFIELD_DECIMAL_PLACES),
+                    "secondary_entropy" : round(record["secondary_entropy"], settings.FLOATFIELD_DECIMAL_PLACES)
+                }
+                VAF.objects.create(metadata=metadata, **vaf)
+                num_vafs += 1
+            
+            metadata.num_reads = bc.num_reads()
+            metadata.mean_coverage = round(bc.mean_coverage(), settings.FLOATFIELD_DECIMAL_PLACES)
+            metadata.num_vafs = num_vafs
+            metadata.mean_entropy = round(bc.mean_entropy(), settings.FLOATFIELD_DECIMAL_PLACES)
+            metadata.references = ",".join(bc.references)
+            metadata.save(update_fields = ["num_reads", "mean_coverage", "num_vafs", "mean_entropy", "references"])
     except Exception as e:
         metadata.delete()
         raise e

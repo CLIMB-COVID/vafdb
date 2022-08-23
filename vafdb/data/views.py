@@ -33,10 +33,15 @@ class CreateGetVAFView(APIView):
         vafs = VAF.objects.select_related("metadata").all()
 
         for field in request.query_params:
+            if field == "cursor":
+                # Ignore this param as its used for pagination
+                continue
+
             values = request.query_params.getlist(field)
             for value in values:
                 try:
                     if value == settings.FIELD_NULL_TOKEN:
+                        # Filter for rows with a NULL value
                         value = None
 
                     vafs = vafs.filter(**{field : value})
@@ -54,7 +59,7 @@ class CreateGetVAFView(APIView):
         paginator.page_size = settings.CURSOR_PAGINATION_PAGE_SIZE      
         result_page = paginator.paginate_queryset(vafs, request)
 
-        # TODO: Serializer which hides metadata
+        # Serialize the results
         serializer = VAFSerializer(
             result_page, 
             many=True

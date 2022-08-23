@@ -5,26 +5,27 @@ from data.models import Metadata, VAF
 class MetadataSerializer(serializers.ModelSerializer):
     class Meta:
         model = Metadata
-        exclude = ("id", )
+        exclude = ("created", )
 
 
 class VAFListSerializer(serializers.ListSerializer):
     def to_representation(self, data):
         data = super().to_representation(data)
-        metadata = {}
+        
+        transformed_data = {}
         for record in data:
-            pair = (
-                record["metadata"]["central_sample_id"], 
-                record["metadata"]["run_name"]
-            )
             record = dict(record)
+            id = record["metadata"]["id"]
             md = record.pop("metadata")
-            if not pair in metadata:
-                metadata[pair] = md
-                metadata[pair]["vaf"] = [record]
+            md.pop("id")
+
+            if not id in transformed_data:
+                transformed_data[id] = md
+                transformed_data[id]["vaf"] = [record]
             else:
-                metadata[pair]["vaf"].append(record)
-        return metadata.values()
+                transformed_data[id]["vaf"].append(record)
+        
+        return transformed_data.values()
 
 
 class VAFSerializer(serializers.ModelSerializer):

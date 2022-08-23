@@ -5,7 +5,7 @@ from django.db import models
 class Metadata(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
-    sequencing_sample_id = models.TextField(unique=True)
+    sample_id = models.TextField(unique=True)
     site_code = models.TextField()
     bam_path = models.TextField()
     collection_date = models.DateField()

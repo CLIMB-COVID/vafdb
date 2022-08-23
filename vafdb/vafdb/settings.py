@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-l2c$&+6i0xibpt2#vpfk8xs9iek2uy$clf!_dj$*y6=clcmxs&' # TODO
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
@@ -125,6 +125,6 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom settings used in the project
-CURSOR_PAGINATION_PAGE_SIZE = 5000
+CURSOR_PAGINATION_PAGE_SIZE = 1000
 FIELD_NULL_TOKEN = "-"
 FLOATFIELD_DECIMAL_PLACES = 3

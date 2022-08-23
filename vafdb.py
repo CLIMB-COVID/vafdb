@@ -3,7 +3,6 @@ import ast
 import json
 import argparse
 import requests
-import basecount
 import pandas as pd
 
 
@@ -48,14 +47,10 @@ class VAFDBClient():
         if metadata:
             # Format metadata that will be emitted as JSON
             metadata = {
-                "pathogen" : metadata["pathogen"],
-                "central_sample_id" : metadata["central_sample_id"],
-                "run_name" : metadata["run_name"],
-                "published_name" : metadata["published_name"],
+                "sample_id" : metadata["sample_id"],
+                "site_code" : metadata["site_code"],
                 "collection_date" : metadata["collection_date"],
                 "bam_path" : metadata["bam_path"],
-                "lineage" : metadata["lineage"],
-                "primer_scheme" : metadata["primer_scheme"],
             }
 
             # Send data
@@ -75,32 +70,38 @@ class VAFDBClient():
             params=fields
         )
         if response.ok:
-            if response.json():
-                meta_fields = list(response.json()[0].keys())
+            results = response.json()["results"]
+
+            if results:
+                meta_fields = list(results[0].keys())
                 meta_fields.pop(meta_fields.index("vaf"))
             else:
                 meta_fields = None
+
             table = pd.json_normalize(
-                response.json(), 
+                results, 
                 record_path=["vaf"], 
                 meta=meta_fields
             )
             print(table.to_csv(index=False, sep='\t'), end='')
 
-            # table = pd.json_normalize(response.json()["results"])
-            # print(table.to_csv(index=False, sep='\t'), end='')
-
-            # next = response.json()["next"]
-            # while next is not None:
-            #     response = requests.get(next)
+            next = response.json()["next"]
+            while next is not None:
+                response = requests.get(next)
             
-            #     if response.ok:
-            #         next = response.json()["next"]
-            #         table = pd.json_normalize(response.json()["results"])
-            #         print(table.to_csv(index=False, sep='\t', header=False), end='')
-            #     else:
-            #         next = None
-            #         print(VAFDBClient._format_response(response))
+                if response.ok:
+                    next = response.json()["next"]
+                    results = response.json()["results"]
+                    
+                    table = pd.json_normalize(
+                        results, 
+                        record_path=["vaf"], 
+                        meta=meta_fields
+                    )
+                    print(table.to_csv(index=False, sep='\t', header=False), end='')
+                else:
+                    next = None
+                    print(VAFDBClient._format_response(response))
         else:
             print(VAFDBClient._format_response(response))
 
