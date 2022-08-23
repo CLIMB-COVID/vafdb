@@ -15,7 +15,7 @@ class CreateGetVAFView(APIView):
 
         if serializer.is_valid():
             metadata = serializer.save()
-            create_vafs.delay(metadata.id, metadata.bam_path)
+            create_vafs.delay(metadata.id)
 
             return Response(
                 serializer.data, 

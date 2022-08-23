@@ -1,5 +1,6 @@
 import os
-import ast
+import csv
+import sys
 import json
 import argparse
 import requests
@@ -40,27 +41,30 @@ class VAFDBClient():
         return f"{status_code}\n{json.dumps(response.json(), indent=indent)}"
 
 
-    def create(self, metadata=None, tsv=None, csv=None):
-        if not (bool(metadata) ^ bool(tsv) ^ bool(csv)):
-            raise Exception("Must provide exactly one of the following: metadata dict, tsv file or csv file")
+    def create(self, csv_path, delimiter=None):
+        if csv_path == "-":
+            csv_file = sys.stdin
+        else:
+            csv_file = open(csv_path)
 
-        if metadata:
-            # Format metadata that will be emitted as JSON
-            metadata = {
-                "sample_id" : metadata["sample_id"],
-                "site_code" : metadata["site_code"],
-                "collection_date" : metadata["collection_date"],
-                "bam_path" : metadata["bam_path"],
-            }
+        try:
+            if delimiter is not None:
+                reader = csv.DictReader(csv_file, delimiter=delimiter)
+            else:
+                reader = csv.DictReader(csv_file)
 
-            # Send data
-            response = requests.post(
-                self.endpoints["create"], 
-                json=metadata
-            )
-            print(VAFDBClient._format_response(response))
+            for data in reader:
+                response = requests.post(
+                    self.endpoints["create"], 
+                    json=data
+                )
+                print(VAFDBClient._format_response(response))
+        
+        finally:
+            if csv_file is not sys.stdin:
+                csv_file.close()
+
     
-
     def get(self, fields=None):
         if fields is None:
             fields = {}
@@ -116,9 +120,9 @@ def main():
     command = parser.add_subparsers(dest="command")
     
     create_parser = command.add_parser("create", parents=[url_parser])
-    create_parser.add_argument("--dict")
-    create_parser.add_argument("--tsv")
-    create_parser.add_argument("--csv")
+    file_parser = create_parser.add_mutually_exclusive_group(required=True)
+    file_parser.add_argument("--tsv")
+    file_parser.add_argument("--csv")
 
     get_parser = command.add_parser("get", parents=[url_parser])
     get_parser.add_argument("-f", "--field", nargs=2, action="append", metavar=("FIELD", "VALUE"))
@@ -131,17 +135,16 @@ def main():
     )
 
     if args.command == "create":
-        if args.dict:
-            metadata = ast.literal_eval(args.dict)
+        if args.tsv:
+            client.create(
+                args.tsv,
+                delimiter="\t"
+            )
         else:
-            metadata = None
-        
-        client.create(
-            metadata=metadata,
-            tsv=args.tsv,
-            csv=args.csv
-        )
-    
+            client.create(
+                args.csv,
+            )
+
     elif args.command == "get":
         fields = {}
         if args.field is not None:

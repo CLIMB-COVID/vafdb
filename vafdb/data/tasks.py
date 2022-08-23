@@ -6,16 +6,15 @@ import basecount
 
 
 @shared_task
-def create_vafs(metadata_id, bam_path):
+def create_vafs(metadata_id):
     metadata = Metadata.objects.get(id=metadata_id)
     try:
         with transaction.atomic():
             bc = basecount.BaseCount(
-                bam_path, 
+                metadata.bam_path, 
                 min_base_quality=10, 
                 min_mapping_quality=10
             )
-
             num_vafs = 0
             for record in bc.records():
                 vaf = {
@@ -39,8 +38,11 @@ def create_vafs(metadata_id, bam_path):
             metadata.mean_entropy = round(bc.mean_entropy(), settings.FLOATFIELD_DECIMAL_PLACES)
             metadata.references = ",".join(bc.references)
             metadata.save(update_fields = ["num_reads", "mean_coverage", "num_vafs", "mean_entropy", "references"])
+            
     except Exception as e:
+        sample_id = metadata.sample_id
         metadata.delete()
-        raise e
+
+        raise Exception(sample_id) from e
     
     
