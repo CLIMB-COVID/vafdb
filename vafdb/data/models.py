@@ -9,8 +9,8 @@ class Metadata(models.Model):
     site_code = models.TextField()
     bam_path = models.TextField()
     collection_date = models.DateField()
-    published_date = models.DateField(auto_now_add=True)
 
+    published_date = models.DateField(auto_now_add=True)
     num_reads = models.IntegerField(null=True)
     num_vafs = models.IntegerField(null=True)
     mean_coverage = models.FloatField(null=True)
