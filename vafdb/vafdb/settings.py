@@ -21,10 +21,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-l2c$&+6i0xibpt2#vpfk8xs9iek2uy$clf!_dj$*y6=clcmxs&' # TODO
+
+# python manage.py shell
+# from django.core.management.utils import get_random_secret_key  
+SECRET_KEY = os.getenv("DJANGO_VAFDB_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
