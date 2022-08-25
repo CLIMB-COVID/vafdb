@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_VAFDB_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
@@ -91,7 +91,7 @@ DATABASES = {
        'ENGINE': 'django.db.backends.postgresql',
        'NAME': 'vafdb',
        'USER': os.getenv("POSTGRES_VAFDB_USER"),
-       'PASSWORD': os.getenv("POSTGRES_VAFDB_USER_PASSWORD"),
+       'PASSWORD': os.getenv("POSTGRES_VAFDB_PASSWORD"),
        'HOST': 'localhost',
        'PORT': '5432',
    }

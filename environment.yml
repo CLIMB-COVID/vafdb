@@ -4,9 +4,9 @@ channels:
   - conda-forge
   - anaconda
 dependencies:
-  # - postgresql
+  # sudo apt-get install postgresql postgresql-contrib
+  # sudo apt-get install rabbitmq-server
   - gunicorn
-  - rabbitmq-server
   - pybind11
   - pip
   - pip:
