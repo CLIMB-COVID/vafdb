@@ -2,12 +2,15 @@ name: vafdb
 channels:
   - defaults
   - conda-forge
+  - anaconda
 dependencies:
+  # - postgresql
   - gunicorn
   - rabbitmq-server
   - pybind11
   - pip
   - pip:
+    - psycopg2
     - django
     - djangorestframework
     - requests
