@@ -39,13 +39,6 @@ class CreateGetVAFView(APIView):
 
             values = request.query_params.getlist(field)
             for value in values:
-                # An unfortunate but easy fix for a single lookup
-                if field.endswith("__isnull"):
-                    if value.lower() == "true":
-                        value = True
-                    elif value.lower() == "false":
-                        value = False
-
                 try:
                     if value == settings.FIELD_NULL_TOKEN:
                         # Filter for rows with a NULL value
