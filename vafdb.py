@@ -38,7 +38,10 @@ class VAFDBClient():
         else:
             indent = None
         status_code = f"<[{response.status_code}] {response.reason}>".center(VAFDBClient.MESSAGE_BAR_WIDTH, "=")
-        return f"{status_code}\n{json.dumps(response.json(), indent=indent)}"
+        try:
+            return f"{status_code}\n{json.dumps(response.json(), indent=indent)}"
+        except json.decoder.JSONDecodeError:
+            return f"{status_code}\n{response.text}"
 
 
     def create(self, csv_path, delimiter=None):
