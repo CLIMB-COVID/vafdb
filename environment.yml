@@ -17,5 +17,5 @@ dependencies:
     - pysam
     - numpy
     - pandas
-    - git+https://github.com/tombch/basecount@cdf987701ca0c075bad0251b9f4c949c74a4517c
+    - git+https://github.com/tombch/basecount@209628936540e63b6267159732adfb25e1e9055d
     - celery
