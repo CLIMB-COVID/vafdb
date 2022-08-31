@@ -5,6 +5,7 @@ import json
 import argparse
 import requests
 import pandas as pd
+from vafdbclient.version import __version__
 
 
 def format_response(response, pretty_print=True):
@@ -143,12 +144,13 @@ class VAFDBClient():
             return data
 
 
-def main():
+def run():
     url_parser = argparse.ArgumentParser(add_help=False)
     url_parser.add_argument("--host", default="localhost")
     url_parser.add_argument("--port", default="8000")
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--version", action="version", version=__version__)
     command = parser.add_subparsers(dest="command")
     
     create_parser = command.add_parser("create", parents=[url_parser])
@@ -161,34 +163,30 @@ def main():
     
     args = parser.parse_args()
 
-    client = VAFDBClient(
-        host=args.host,
-        port=args.port,
-        stdout_responses=True
-    )
+    if args.command:
+        client = VAFDBClient(
+            host=args.host,
+            port=args.port,
+            stdout_responses=True
+        )
 
-    if args.command == "create":
-        if args.tsv:
-            client.create(
-                args.tsv,
-                delimiter="\t"
-            )
-        else:
-            client.create(
-                args.csv,
-            )
+        if args.command == "create":
+            if args.tsv:
+                client.create(
+                    args.tsv,
+                    delimiter="\t"
+                )
+            else:
+                client.create(
+                    args.csv,
+                )
 
-    elif args.command == "get":
-        fields = {}
-        if args.field is not None:
-            for f, v in args.field:
-                if fields.get(f) is None:
-                    fields[f] = []
-                fields[f].append(v)
-                
-        client.get(**fields)
-
-
-
-if __name__ == "__main__":
-    main()
+        elif args.command == "get":
+            fields = {}
+            if args.field is not None:
+                for f, v in args.field:
+                    if fields.get(f) is None:
+                        fields[f] = []
+                    fields[f].append(v)
+                    
+            client.get(**fields)
