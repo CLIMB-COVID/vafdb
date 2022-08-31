@@ -7,49 +7,41 @@ import requests
 import pandas as pd
 
 
+def format_response(response, pretty_print=True):
+    '''
+    Make the response look lovely.
+    '''
+    if pretty_print:
+        indent = 4
+    else:
+        indent = None
+    status_code = f"<[{response.status_code}] {response.reason}>"
+    try:
+        return f"{status_code}\n{json.dumps(response.json(), indent=indent)}"
+    except json.decoder.JSONDecodeError:
+        return f"{status_code}\n{response.text}"
+
 
 class VAFDBClient():
-    DEFAULT_HOST = "localhost"
-    DEFAULT_PORT = 8000
-    MESSAGE_BAR_WIDTH = 0
-
-
-    def __init__(self, host=None, port=None):
-        if host is None:
-            host = VAFDBClient.DEFAULT_HOST
-            
-        if port is None:
-            port = VAFDBClient.DEFAULT_PORT
-        
+    def __init__(self, host : str = "localhost", port : int = 8000, stdout_responses : bool = False):
         self.url = f"http://{host}:{port}"
         self.endpoints = {
             "create" : os.path.join(self.url, "data/"),
             "get" : os.path.join(self.url, "data/")
         }
+        self.stdout_responses = stdout_responses
 
 
-    @classmethod
-    def _format_response(cls, response, pretty_print=True):
+    def create(self, csv_path : str, delimiter : str | None = None):
         '''
-        Make the response look lovely
+        Insert data into `vafdb`.
         '''
-        if pretty_print:
-            indent = 4
-        else:
-            indent = None
-        status_code = f"<[{response.status_code}] {response.reason}>".center(VAFDBClient.MESSAGE_BAR_WIDTH, "=")
-        try:
-            return f"{status_code}\n{json.dumps(response.json(), indent=indent)}"
-        except json.decoder.JSONDecodeError:
-            return f"{status_code}\n{response.text}"
-
-
-    def create(self, csv_path, delimiter=None):
         if csv_path == "-":
             csv_file = sys.stdin
         else:
             csv_file = open(csv_path)
 
+        failures = []
         try:
             if delimiter is not None:
                 reader = csv.DictReader(csv_file, delimiter=delimiter)
@@ -61,17 +53,30 @@ class VAFDBClient():
                     self.endpoints["create"], 
                     json=data
                 )
-                print(VAFDBClient._format_response(response))
-        
+                if self.stdout_responses:
+                    print(format_response(response))
+                else:
+                    try:
+                        failures.append(response.json())
+                    except json.decoder.JSONDecodeError:
+                        failures.append(response.text)
         finally:
             if csv_file is not sys.stdin:
                 csv_file.close()
+        
+        if not self.stdout_responses:
+            return failures
 
     
-    def get(self, fields=None):
+    def get(self, **fields):
+        '''
+        Retrieve data from `vafdb`.
+        '''
         if fields is None:
             fields = {}
         
+        data = []
+
         response = requests.get(
             self.endpoints["get"],
             params=fields
@@ -91,7 +96,11 @@ class VAFDBClient():
                 meta=meta_fields
             )
             table.columns = ["metadata__" + str(col) if col in meta_fields else col for col in table.columns]
-            print(table.to_csv(index=False, sep='\t'), end='')
+
+            if self.stdout_responses:
+                print(table.to_csv(index=False, sep='\t'), end='')
+            else:
+                data.extend(table.to_dict("records"))
 
             next = response.json()["next"]
             while next is not None:
@@ -107,13 +116,33 @@ class VAFDBClient():
                         meta=meta_fields
                     )
                     table.columns = ["metadata__" + str(col) if col in meta_fields else col for col in table.columns]
-                    print(table.to_csv(index=False, sep='\t', header=False), end='')
+
+                    if self.stdout_responses:
+                        print(table.to_csv(index=False, sep='\t', header=False), end='')
+                    else:
+                        data.extend(table.to_dict("records"))
                 else:
                     next = None
-                    print(VAFDBClient._format_response(response))
-        else:
-            print(VAFDBClient._format_response(response))
 
+                    if self.stdout_responses:
+                        print(format_response(response))
+                    else:
+                        try:
+                            data = response.json()
+                        except json.decoder.JSONDecodeError:
+                            data = response.text
+                        break
+        else:
+            if self.stdout_responses:
+                print(format_response(response))
+            else:
+                try:
+                    data = response.json()
+                except json.decoder.JSONDecodeError:
+                    data = response.text
+        
+        if not self.stdout_responses:
+            return data
 
 
 def main():
@@ -136,7 +165,8 @@ def main():
 
     client = VAFDBClient(
         host=args.host,
-        port=args.port 
+        port=args.port,
+        stdout_responses=True
     )
 
     if args.command == "create":
@@ -158,7 +188,7 @@ def main():
                     fields[f] = []
                 fields[f].append(v)
                 
-        client.get(fields)
+        client.get(**fields)
 
 
 
