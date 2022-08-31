@@ -37,6 +37,11 @@ class VAFFilter(filters.FilterSet):
             "num_g" : NUMBER_LOOKUPS,
             "num_t" : NUMBER_LOOKUPS,
             "num_ds" : NUMBER_LOOKUPS,
+            "pc_a" : NUMBER_LOOKUPS,
+            "pc_c" : NUMBER_LOOKUPS,
+            "pc_g" : NUMBER_LOOKUPS,
+            "pc_t" : NUMBER_LOOKUPS,
+            "pc_ds" : NUMBER_LOOKUPS,
             "entropy" : NUMBER_LOOKUPS,
             "secondary_entropy" : NUMBER_LOOKUPS
         }

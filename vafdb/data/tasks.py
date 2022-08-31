@@ -26,6 +26,11 @@ def create_vafs(metadata_id):
                     "num_g" : record["num_g"],
                     "num_t" : record["num_t"],
                     "num_ds" : record["num_ds"],
+                    "pc_a" : record["pc_a"],
+                    "pc_c" : record["pc_c"],
+                    "pc_g" : record["pc_g"],
+                    "pc_t" : record["pc_t"],
+                    "pc_ds" : record["pc_ds"],
                     "entropy" : round(record["entropy"], settings.FLOATFIELD_DECIMAL_PLACES),
                     "secondary_entropy" : round(record["secondary_entropy"], settings.FLOATFIELD_DECIMAL_PLACES)
                 }

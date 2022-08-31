@@ -36,6 +36,11 @@ class VAF(models.Model):
     num_g = models.IntegerField()
     num_t = models.IntegerField()
     num_ds = models.IntegerField()
+    pc_a = models.IntegerField()
+    pc_c = models.IntegerField()
+    pc_g = models.IntegerField()
+    pc_t = models.IntegerField()
+    pc_ds = models.IntegerField()
     entropy = models.FloatField()
     secondary_entropy = models.FloatField()
 
