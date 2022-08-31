@@ -48,26 +48,12 @@ class VAF(models.Model):
 
 
 
-from django.db.models import Field
-from django.db.models.lookups import BuiltinLookup
-
-@Field.register_lookup
-class IsNull(BuiltinLookup):
-    lookup_name = "isnull"
-    prepare_rhs = False
+@models.Field.register_lookup
+class NotEqual(models.Lookup):
+    lookup_name = 'ne'
 
     def as_sql(self, compiler, connection):
-        if self.rhs in ["true", "True"]:
-            self.rhs = True
-        elif self.rhs in ["false", "False"]:
-            self.rhs = False
-
-        if not isinstance(self.rhs, bool):
-            raise ValueError(
-                "The QuerySet value for an isnull lookup must be True or False."
-            )
-        sql, params = compiler.compile(self.lhs)
-        if self.rhs:
-            return "%s IS NULL" % sql, params
-        else:
-            return "%s IS NOT NULL" % sql, params
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        params = lhs_params + rhs_params
+        return '%s <> %s' % (lhs, rhs), params

@@ -2,9 +2,18 @@ from django_filters import rest_framework as filters
 from .models import VAF
 
 
-CHAR_LOOKUPS = ["exact", "contains", "isnull"]
-NUMBER_LOOKUPS = ["exact", "lt", "gt", "lte", "gte", "isnull"]
-DATE_LOOKUPS = ["exact", "lt", "gt", "lte", "gte", "isnull"]
+
+BASE_LOOKUPS = ["exact", "contains", "isnull", "in", "range", "ne", "lt", "gt", "lte", "gte"]
+CHAR_LOOKUPS = BASE_LOOKUPS
+NUMBER_LOOKUPS = BASE_LOOKUPS
+DATE_LOOKUPS = BASE_LOOKUPS + [
+        "year" + x for x in ["", "__ne", "__lt", "__gt", "__lte", "__gte"]
+    ] + [
+        "month" + x for x in ["", "__ne", "__lt", "__gt", "__lte", "__gte"]
+    ] + [
+        "day" + x for x in ["", "__ne", "__lt", "__gt", "__lte", "__gte"]
+    ]
+
 
 
 class VAFFilter(filters.FilterSet):
