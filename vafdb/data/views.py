@@ -6,6 +6,8 @@ from django.conf import settings
 from .models import VAF
 from .serializers import MetadataSerializer, VAFSerializer
 from .tasks import create_vafs
+from .filters import VAFFilter
+from django_filters.utils import translate_validation
 
 
 
@@ -29,30 +31,46 @@ class CreateGetVAFView(APIView):
 
 
     def get(self, request):
-        # Get all VAFs, with their related Metadata
-        vafs = VAF.objects.select_related("metadata").all()
+        # Take out the pagination params we do not wish to filter on
+        _mutable = request.query_params._mutable
+        request.query_params._mutable = True
+        cursor = request.query_params.get("cursor")
+        if cursor:
+            request.query_params.pop("cursor")
+        request.query_params._mutable = _mutable
 
-        for field in request.query_params:
-            if field == "cursor":
-                # Ignore this param as its used for pagination
-                continue
-
-            values = request.query_params.getlist(field)
-            for value in values:
-                try:
-                    if value == settings.FIELD_NULL_TOKEN:
-                        # Filter for rows with a NULL value
-                        value = None
-                    vafs = vafs.filter(**{field : value})
-
-                except Exception as e:
-                    return Response(
-                        e.args, 
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+        filterset = VAFFilter(
+            request.query_params, 
+            queryset=VAF.objects.select_related("metadata").all(),
+        )
         
+        errors = {}
+
+        # Append unknown fields to error dict
+        for field in request.query_params:
+            if field not in filterset.filters:
+                errors[field] = ["Unknown field."]
+
+        if not filterset.is_valid():
+            # Append invalid fields to error dict
+            for field, msg in filterset.errors.items():
+                errors[field] = msg
+        
+        if errors:
+            return Response(
+                errors, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Add the cursor param back into the request
+        if cursor is not None:
+            _mutable = request.query_params._mutable
+            request.query_params._mutable = True
+            request.query_params["cursor"] = cursor       
+            request.query_params._mutable = _mutable
+
         # Paginate the response
-        vafs = vafs.order_by("id")
+        vafs = filterset.qs.order_by("id")
         paginator = CursorPagination()
         paginator.ordering = "created"
         paginator.page_size = settings.CURSOR_PAGINATION_PAGE_SIZE      
