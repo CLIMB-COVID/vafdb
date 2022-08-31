@@ -95,7 +95,6 @@ class VAFDBClient():
                 record_path=["vaf"], 
                 meta=meta_fields
             )
-            table.columns = ["metadata__" + str(col) if col in meta_fields else col for col in table.columns]
 
             if self.stdout_responses:
                 print(table.to_csv(index=False, sep='\t'), end='')
@@ -115,7 +114,6 @@ class VAFDBClient():
                         record_path=["vaf"], 
                         meta=meta_fields
                     )
-                    table.columns = ["metadata__" + str(col) if col in meta_fields else col for col in table.columns]
 
                     if self.stdout_responses:
                         print(table.to_csv(index=False, sep='\t', header=False), end='')
