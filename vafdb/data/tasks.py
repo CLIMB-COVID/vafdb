@@ -11,9 +11,9 @@ def create_vafs(metadata_id):
     try:
         with transaction.atomic():
             bc = basecount.BaseCount(
-                metadata.bam_path, 
-                min_base_quality=10, 
-                min_mapping_quality=10
+                metadata.bam_path,
+                min_base_quality=settings.MIN_BASE_QUALITY, 
+                min_mapping_quality=settings.MIN_MAPPING_QUALITY,
             )
             num_vafs = 0
             for record in bc.records():
@@ -26,11 +26,11 @@ def create_vafs(metadata_id):
                     "num_g" : record["num_g"],
                     "num_t" : record["num_t"],
                     "num_ds" : record["num_ds"],
-                    "pc_a" : record["pc_a"],
-                    "pc_c" : record["pc_c"],
-                    "pc_g" : record["pc_g"],
-                    "pc_t" : record["pc_t"],
-                    "pc_ds" : record["pc_ds"],
+                    "pc_a" : round(record["pc_a"], settings.FLOATFIELD_DECIMAL_PLACES),
+                    "pc_c" : round(record["pc_c"], settings.FLOATFIELD_DECIMAL_PLACES),
+                    "pc_g" : round(record["pc_g"], settings.FLOATFIELD_DECIMAL_PLACES),
+                    "pc_t" : round(record["pc_t"], settings.FLOATFIELD_DECIMAL_PLACES),
+                    "pc_ds" : round(record["pc_ds"], settings.FLOATFIELD_DECIMAL_PLACES),
                     "entropy" : round(record["entropy"], settings.FLOATFIELD_DECIMAL_PLACES),
                     "secondary_entropy" : round(record["secondary_entropy"], settings.FLOATFIELD_DECIMAL_PLACES)
                 }

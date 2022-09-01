@@ -3,8 +3,8 @@ from .models import VAF
 
 
 
-BASE_LOOKUPS = ["exact", "contains", "isnull", "in", "range", "ne", "lt", "gt", "lte", "gte"]
-CHAR_LOOKUPS = BASE_LOOKUPS
+BASE_LOOKUPS = ["exact", "contains", "in", "range", "ne", "lt", "gt", "lte", "gte"]
+CHAR_LOOKUPS = BASE_LOOKUPS + ["startswith", "endswith", "iexact", "icontains", "istartswith", "iendswith", "regex", "iregex"]
 NUMBER_LOOKUPS = BASE_LOOKUPS
 DATE_LOOKUPS = BASE_LOOKUPS + [
         "year" + x for x in ["", "__ne", "__lt", "__gt", "__lte", "__gte"]
