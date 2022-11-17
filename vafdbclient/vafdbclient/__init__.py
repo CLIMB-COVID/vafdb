@@ -1,1 +1,2 @@
-from vafdbclient.main import VAFDBClient
+from vafdbclient.api import Client
+from vafdbclient import utils
