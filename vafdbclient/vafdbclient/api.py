@@ -1,6 +1,7 @@
 import csv
 import sys
 import requests
+from vafdbclient.field import Field
 
 
 class Client:
@@ -9,6 +10,7 @@ class Client:
         self.endpoints = {
             "create": f"{self.url}/data/",
             "get": f"{self.url}/data/",
+            "query": f"{self.url}/data/query/"
         }
 
     def create(self, fields):
@@ -68,3 +70,16 @@ class Client:
                 _next = response.json()["next"]
             else:
                 _next = None
+
+    def query(self, query):
+        """
+        Retrieve data from `VAFDb`.
+        """
+        if not isinstance(query, Field):
+            raise Exception("Query must be of type Field")
+
+        response = requests.post(
+            self.endpoints["query"],
+            json=query.query,
+        )
+        return response
