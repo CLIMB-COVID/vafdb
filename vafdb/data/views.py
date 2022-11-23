@@ -4,23 +4,18 @@ from rest_framework.response import Response
 from rest_framework.pagination import CursorPagination
 from django.conf import settings
 from .models import VAF
-from .serializers import MetadataSerializer, VAFSerializer
-from .tasks import create_vafs
+from .serializers import VAFSerializer
+from .tasks import create
 from .filters import VAFFilter
 from utils.contextmanagers import mutable
 
 
 class CreateGetVAFView(APIView):
     def post(self, request):
-        serializer = MetadataSerializer(data=request.data)
-
-        if serializer.is_valid():
-            metadata = serializer.save()
-            create_vafs.delay(metadata.id)
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        create.delay(**request.data)
+        return Response(
+            {"detail": "task submitted successfully"}, status=status.HTTP_200_OK
+        )
 
     def get(self, request):
         # Prepare paginator

@@ -1,11 +1,47 @@
 from django.db import models
+from django.db.models import Field
+from django.db.models.lookups import BuiltinLookup
 
+
+@Field.register_lookup
+class NotEqual(models.Lookup):
+    lookup_name = "ne"
+
+    def as_sql(self, compiler, connection):
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        params = lhs_params + rhs_params
+        return "%s <> %s" % (lhs, rhs), params
+
+
+@Field.register_lookup
+class IsNull(BuiltinLookup):
+    lookup_name = "isnull"
+    prepare_rhs = False
+
+    def as_sql(self, compiler, connection):
+        if str(self.rhs) in ["0", "false", "False"]:
+            self.rhs = False
+
+        elif str(self.rhs) in ["1", "false", "False"]:
+            self.rhs = True
+
+        if not isinstance(self.rhs, bool):
+            raise ValueError(
+                "The QuerySet value for an isnull lookup must be True or False."
+            )
+
+        sql, params = compiler.compile(self.lhs)
+        if self.rhs:
+            return "%s IS NULL" % sql, params
+        else:
+            return "%s IS NOT NULL" % sql, params
 
 
 class Metadata(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     sample_id = models.TextField(unique=True)
-    site_code = models.TextField(db_index=True)
+    site = models.TextField(db_index=True)
     bam_path = models.TextField()
     collection_date = models.DateField(db_index=True)
     published_date = models.DateField(auto_now_add=True, db_index=True)
@@ -14,7 +50,6 @@ class Metadata(models.Model):
     mean_coverage = models.FloatField(null=True)
     mean_entropy = models.FloatField(null=True)
     references = models.TextField(null=True)
-
 
 
 class VAF(models.Model):
@@ -37,20 +72,4 @@ class VAF(models.Model):
     secondary_entropy = models.FloatField()
 
     class Meta:
-        unique_together = [
-            "metadata", 
-            "reference", 
-            "position"
-        ]
-
-
-
-@models.Field.register_lookup
-class NotEqual(models.Lookup):
-    lookup_name = 'ne'
-
-    def as_sql(self, compiler, connection):
-        lhs, lhs_params = self.process_lhs(compiler, connection)
-        rhs, rhs_params = self.process_rhs(compiler, connection)
-        params = lhs_params + rhs_params
-        return '%s <> %s' % (lhs, rhs), params
+        unique_together = ["metadata", "reference", "position"]
