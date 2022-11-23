@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # python manage.py shell
 # from django.core.management.utils import get_random_secret_key
-SECRET_KEY = os.getenv("DJANGO_VAFDB_SECRET_KEY")
+SECRET_KEY = os.environ["VAFDB_DJANGO_SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -81,20 +81,16 @@ WSGI_APPLICATION = "vafdb.wsgi.application"
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 # DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": os.environ["VAFDB_SQLITE_DB_PATH"],
 #     }
 # }
 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "vafdb",
-        "USER": os.getenv("POSTGRES_VAFDB_USER"),
-        "PASSWORD": os.getenv("POSTGRES_VAFDB_PASSWORD"),
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": os.environ["VAFDB_POSTGRES_DB_NAME"],
     }
 }
 
@@ -142,7 +138,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom settings used in the project
 CURSOR_PAGINATION_PAGE_SIZE = 1000
-FIELD_NULL_TOKEN = "-"
 FLOATFIELD_DECIMAL_PLACES = 3
 MIN_BASE_QUALITY = 0
 MIN_MAPPING_QUALITY = 0
