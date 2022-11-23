@@ -29,6 +29,7 @@ class CLI:
         result = next(results)
 
         meta_fields = None
+        columns = None
 
         if result.ok:
             if result.json()["results"]:
@@ -38,6 +39,14 @@ class CLI:
             table = pd.json_normalize(
                 result.json()["results"], record_path=["vaf"], meta=meta_fields
             )
+            if meta_fields is not None:
+                columns = (
+                    [meta_fields[0]]
+                    + table.columns.tolist()[: -len(meta_fields)]
+                    + table.columns.tolist()[-len(meta_fields) + 1 :]
+                )
+                table = table[columns]
+
             print(table.to_csv(index=False, sep="\t"), end="")
         else:
             utils.print_response(result)
@@ -47,6 +56,9 @@ class CLI:
                 table = pd.json_normalize(
                     result.json()["results"], record_path=["vaf"], meta=meta_fields
                 )
+                if (meta_fields is not None) and (columns is not None):
+                    table = table[columns]
+
                 print(table.to_csv(index=False, sep="\t", header=False), end="")
             else:
                 utils.print_response(result)
