@@ -1,8 +1,6 @@
 name: vafdb
 channels:
   - defaults
-  - conda-forge
-  - anaconda
 dependencies:
   # sudo apt-get install postgresql postgresql-contrib
   # sudo apt-get install rabbitmq-server
