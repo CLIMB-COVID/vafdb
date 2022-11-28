@@ -12,9 +12,13 @@ from utils.contextmanagers import mutable
 
 class CreateGetVAFView(APIView):
     def post(self, request):
-        create.delay(**request.data)
+        task = create.delay(**request.data)
         return Response(
-            {"detail": "task submitted successfully"}, status=status.HTTP_200_OK
+            {
+                "sample_id": request.data.get("sample_id"),
+                "task_id": task.id,
+            },
+            status=status.HTTP_200_OK,
         )
 
     def get(self, request):
