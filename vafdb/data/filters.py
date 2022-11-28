@@ -67,15 +67,16 @@ class VAFFilter(filters.FilterSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.base_filters = []
+        self.metadata_fields = []
 
         for field, field_type in fields.items():
             filter_name = field.removeprefix("metadata__")
 
+            if field.startswith("metadata__"):
+                self.metadata_fields.append(filter_name)
+
             if not any(x.startswith(filter_name) for x in self.data):
                 continue
-
-            self.base_filters.append(filter_name)
 
             if field_type == "text":
                 self.filters[filter_name] = filters.CharFilter(field_name=field)

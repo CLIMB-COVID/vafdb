@@ -1,5 +1,32 @@
 import sys
 import json
+import pandas as pd
+
+
+def pandafy(response):
+    """
+    Takes a response and TURNS IT INTO A PANDA
+    """
+    response.raise_for_status()
+
+    meta_fields = None
+    columns = None
+
+    if response.json():
+        meta_fields = list(response.json()[0].keys())
+        meta_fields.pop(meta_fields.index("vaf"))
+
+    table = pd.json_normalize(response.json(), record_path=["vaf"], meta=meta_fields)
+
+    if meta_fields is not None:
+        columns = (
+            [meta_fields[0]]
+            + table.columns.tolist()[: -len(meta_fields)]
+            + table.columns.tolist()[-len(meta_fields) + 1 :]
+        )
+        table = table[columns]
+
+    return table
 
 
 def construct_fields_dict(arg_fields):
