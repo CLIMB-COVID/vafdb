@@ -1,5 +1,47 @@
 # `vafdb`
 
+## Generating data
+```
+$ cat metadata.tsv
+sample_id	site	bam_path	collection_date
+71900E91F7	site1	/path/to/file.bam	2022-10-2
+5523DEB355	site6	/path/to/file.bam	2022-9-3
+FE3B496871	site2	/path/to/file.bam	2022-5-8
+E2A89A963D	site0	/path/to/file.bam	2022-6-5
+99508919E2	site1	/path/to/file.bam	2022-10-1
+...
+```
+```
+$ vafdb tsv-create metadata.tsv
+<[200] OK>
+{
+    "sample_id": "71900E91F7",
+    "task_id": "f13e7d1b-b4f6-40fd-890f-b100ca5b27ee"
+}
+<[200] OK>
+{
+    "sample_id": "5523DEB355",
+    "task_id": "ed9ba54b-e1a6-4613-b8f9-12a295544943"
+}
+<[200] OK>
+{
+    "sample_id": "FE3B496871",
+    "task_id": "a77bbf24-f243-498f-938b-d8c8db7ba3ab"
+}
+<[200] OK>
+{
+    "sample_id": "E2A89A963D",
+    "task_id": "851bf18c-53e6-4f47-90be-191f0d8aa976"
+}
+<[200] OK>
+{
+    "sample_id": "99508919E2",
+    "task_id": "88aa7765-847d-437c-abe1-744114577ebb"
+}
+...
+```
+
+## Retrieving data
 ```python
 # script.py
 
