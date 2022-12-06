@@ -1,6 +1,8 @@
 from django_filters import rest_framework as filters
 from distutils.util import strtobool
 from utils.filters import (
+    ChoiceInFilter,
+    ChoiceRangeFilter,
     CharInFilter,
     CharRangeFilter,
     NumberInFilter,
@@ -10,12 +12,20 @@ from utils.filters import (
     TypedChoiceInFilter,
     TypedChoiceRangeFilter,
 )
+from .models import VAF
 
 
 # Lookups shared by all fields
-BASE_LOOKUPS = ["exact", "ne", "lt", "lte", "gt", "gte"]
+BASE_LOOKUPS = [
+    "exact",
+    "ne",
+    "lt",
+    "lte",
+    "gt",
+    "gte",
+]
 
-# Additional lookups for CharField and TextField
+# Additional lookups for text fields
 CHAR_LOOKUPS = [
     "contains",
     "startswith",
@@ -28,7 +38,7 @@ CHAR_LOOKUPS = [
     "iregex",
 ]
 
-# Accepted strings for True and False when validating BooleanField
+# Accepted strings for True and False when validating bool fields
 BOOLEAN_CHOICES = (
     ("True", "True"),
     ("true", "true"),
@@ -37,6 +47,7 @@ BOOLEAN_CHOICES = (
 )
 
 
+# All filterable fields within the VAF table, and their field type
 fields = {
     "metadata__sample_id": "text",
     "metadata__site": "text",
@@ -55,8 +66,8 @@ fields = {
     "num_g": "number",
     "num_t": "number",
     "num_ds": "number",
-    "ref_base": "text",
-    "base": "text",
+    "ref_base": "choices",
+    "base": "choices",
     "confidence": "number",
     "diff": "bool",
     "pc_a": "number",
@@ -73,18 +84,67 @@ class VAFFilter(filters.FilterSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # List of metadata fields (not including the prefix required for VAF filter)
         self.metadata_fields = []
 
+        # List of all choice filters
+        # This is needed for finding and setting any user input choice values to uppercase
+        # Want choice fields to be case-insensitive, so this needs doing before the filterset form validates the user data
+        self.choice_filters = []
+
         for field, field_type in fields.items():
+            # Filter name is the user-facing name for the field
+            # Don't want metadata fields to require this prefix so its removed in the filter name
             filter_name = field.removeprefix("metadata__")
 
-            if field.startswith("metadata__"):
-                self.metadata_fields.append(filter_name)
-
+            # If none of the user supplied fields even start with the filter name, it can be assumed we dont need to build this filter
             if not any(x.startswith(filter_name) for x in self.data):
                 continue
 
-            if field_type == "text":
+            # If field is a metadata field, add it to the list of metadata fields
+            if field.startswith("metadata__"):
+                self.metadata_fields.append(filter_name)
+
+            # If field is a choice type, construct choice filters for it
+            if field_type == "choices":
+                choices = VAF._meta.get_field(field).choices
+
+                self.filters[filter_name] = filters.ChoiceFilter(
+                    field_name=field, choices=choices
+                )
+                self.choice_filters.append(filter_name)
+
+                self.filters[filter_name + "__in"] = ChoiceInFilter(
+                    field_name=field, choices=choices, lookup_expr="in"
+                )
+                self.choice_filters.append(filter_name + "__in")
+
+                self.filters[filter_name + "__range"] = ChoiceRangeFilter(
+                    field_name=field, choices=choices, lookup_expr="range"
+                )
+                self.choice_filters.append(filter_name + "__range")
+
+                self.filters[filter_name + "__isnull"] = filters.TypedChoiceFilter(
+                    field_name=field,
+                    choices=BOOLEAN_CHOICES,
+                    coerce=strtobool,
+                    lookup_expr="isnull",
+                )
+
+                for lookup in BASE_LOOKUPS:
+                    self.filters[filter_name + "__" + lookup] = filters.ChoiceFilter(
+                        field_name=field, choices=choices, lookup_expr=lookup
+                    )
+                    self.choice_filters.append(filter_name + "__" + lookup)
+
+                for lookup in CHAR_LOOKUPS:
+                    self.filters[filter_name + "__" + lookup] = filters.CharFilter(
+                        field_name=field, lookup_expr=lookup
+                    )
+                    self.choice_filters.append(filter_name + "__" + lookup)
+
+            # If field is text, construct text filters for it
+            elif field_type == "text":
                 self.filters[filter_name] = filters.CharFilter(field_name=field)
                 self.filters[filter_name + "__in"] = CharInFilter(
                     field_name=field, lookup_expr="in"
@@ -109,6 +169,7 @@ class VAFFilter(filters.FilterSet):
                         field_name=field, lookup_expr=lookup
                     )
 
+            # If field is a number, construct number filters for it
             elif field_type == "number":
                 self.filters[filter_name] = filters.NumberFilter(field_name=field)
 
@@ -130,6 +191,7 @@ class VAFFilter(filters.FilterSet):
                         field_name=field, lookup_expr=lookup
                     )
 
+            # If field is a date, construct date filters for it
             elif field_type == "date":
                 self.filters[filter_name] = filters.DateFilter(
                     field_name=field, input_formats=["%Y-%m-%d"]
@@ -174,6 +236,7 @@ class VAFFilter(filters.FilterSet):
                         field_name=field, input_formats=["%Y-%m-%d"], lookup_expr=lookup
                     )
 
+            # If field is a bool, construct bool filters for it
             elif field_type == "bool":
                 self.filters[filter_name] = filters.TypedChoiceFilter(
                     field_name=field, choices=BOOLEAN_CHOICES, coerce=strtobool
@@ -206,3 +269,8 @@ class VAFFilter(filters.FilterSet):
                         coerce=strtobool,
                         lookup_expr=lookup,
                     )
+
+        # Check user data for any choice fields, and set their values to uppercase
+        for field, value in self.data.items():
+            if field in self.choice_filters and isinstance(value, str):
+                self.data[field] = value.upper()

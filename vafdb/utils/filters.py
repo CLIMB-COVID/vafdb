@@ -1,6 +1,14 @@
 from django_filters import rest_framework as filters
 
 
+class ChoiceInFilter(filters.BaseInFilter, filters.ChoiceFilter):
+    pass
+
+
+class ChoiceRangeFilter(filters.BaseRangeFilter, filters.ChoiceFilter):
+    pass
+
+
 class NumberInFilter(filters.BaseInFilter, filters.NumberFilter):
     pass
 

@@ -1,6 +1,8 @@
 from django.db import models
 from django.db.models import Field
 from django.db.models.lookups import BuiltinLookup
+from utils.functions import choices
+from utils.fields import UpperCharField
 
 
 @Field.register_lookup
@@ -63,8 +65,8 @@ class VAF(models.Model):
     reference = models.TextField(db_index=True)
     position = models.IntegerField(db_index=True)
     coverage = models.IntegerField()
-    ref_base = models.CharField(max_length=2)
-    base = models.CharField(max_length=2)
+    ref_base = UpperCharField(max_length=2, choices=choices(["A", "C", "T", "G", "DS"]))
+    base = UpperCharField(max_length=2, choices=choices(["A", "C", "T", "G", "DS"]))
     confidence = models.FloatField()
     diff = models.BooleanField()
     num_a = models.IntegerField()
