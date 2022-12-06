@@ -38,6 +38,11 @@ class IsNull(BuiltinLookup):
             return "%s IS NOT NULL" % sql, params
 
 
+class Reference(models.Model):
+    name = models.TextField(unique=True)
+    sequence = models.TextField()
+
+
 class Metadata(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     sample_id = models.TextField(unique=True)
@@ -58,6 +63,10 @@ class VAF(models.Model):
     reference = models.TextField(db_index=True)
     position = models.IntegerField(db_index=True)
     coverage = models.IntegerField()
+    ref_base = models.CharField(max_length=2)
+    base = models.CharField(max_length=2)
+    confidence = models.FloatField()
+    diff = models.BooleanField()
     num_a = models.IntegerField()
     num_c = models.IntegerField()
     num_g = models.IntegerField()
