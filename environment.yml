@@ -18,3 +18,4 @@ dependencies:
     - pandas
     - git+https://github.com/tombch/basecount@1b809cfe48583d92ce660bec575f8adfce9d51c9
     - celery
+    - biopython
