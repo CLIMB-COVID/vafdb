@@ -23,3 +23,11 @@ class DateInFilter(filters.BaseInFilter, filters.DateFilter):
 
 class DateRangeFilter(filters.BaseRangeFilter, filters.DateFilter):
     pass
+
+
+class TypedChoiceInFilter(filters.BaseInFilter, filters.TypedChoiceFilter):
+    pass
+
+
+class TypedChoiceRangeFilter(filters.BaseInFilter, filters.TypedChoiceFilter):
+    pass
