@@ -7,6 +7,8 @@ from utils.filters import (
     NumberRangeFilter,
     DateInFilter,
     DateRangeFilter,
+    TypedChoiceInFilter,
+    TypedChoiceRangeFilter,
 )
 
 
@@ -53,6 +55,10 @@ fields = {
     "num_g": "number",
     "num_t": "number",
     "num_ds": "number",
+    "ref_base": "text",
+    "base": "text",
+    "confidence": "number",
+    "diff": "bool",
     "pc_a": "number",
     "pc_c": "number",
     "pc_g": "number",
@@ -166,4 +172,37 @@ class VAFFilter(filters.FilterSet):
                 for lookup in BASE_LOOKUPS:
                     self.filters[filter_name + "__" + lookup] = filters.DateFilter(
                         field_name=field, input_formats=["%Y-%m-%d"], lookup_expr=lookup
+                    )
+
+            elif field_type == "bool":
+                self.filters[filter_name] = filters.TypedChoiceFilter(
+                    field_name=field, choices=BOOLEAN_CHOICES, coerce=strtobool
+                )
+                self.filters[filter_name + "__in"] = TypedChoiceInFilter(
+                    field_name=field,
+                    choices=BOOLEAN_CHOICES,
+                    coerce=strtobool,
+                    lookup_expr="in",
+                )
+                self.filters[filter_name + "__range"] = TypedChoiceRangeFilter(
+                    field_name=field,
+                    choices=BOOLEAN_CHOICES,
+                    coerce=strtobool,
+                    lookup_expr="range",
+                )
+                self.filters[filter_name + "__isnull"] = filters.TypedChoiceFilter(
+                    field_name=field,
+                    choices=BOOLEAN_CHOICES,
+                    coerce=strtobool,
+                    lookup_expr="isnull",
+                )
+
+                for lookup in BASE_LOOKUPS:
+                    self.filters[
+                        filter_name + "__" + lookup
+                    ] = filters.TypedChoiceFilter(
+                        field_name=field,
+                        choices=BOOLEAN_CHOICES,
+                        coerce=strtobool,
+                        lookup_expr=lookup,
                     )
