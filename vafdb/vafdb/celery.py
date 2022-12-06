@@ -20,3 +20,9 @@ app.autodiscover_tasks()
 @app.task(bind=True, ignore_result=True)
 def debug_task(self):
     print(f"Request: {self.request!r}")
+
+
+# app.conf.task_routes = {
+#     "data.tasks.count": {"queue": "count_queue"},
+#     "data.tasks.create": {"queue": "create_queue"},
+# }
