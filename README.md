@@ -3,19 +3,19 @@
 ## Generating data
 ```
 $ cat metadata.tsv
-sample_id	site	bam_path	collection_date
-71900E91F7	site1	/path/to/file.bam	2022-10-2
-5523DEB355	site6	/path/to/file.bam	2022-9-3
-FE3B496871	site2	/path/to/file.bam	2022-5-8
-E2A89A963D	site0	/path/to/file.bam	2022-6-5
-99508919E2	site1	/path/to/file.bam	2022-10-1
+sample_id   site   bam_path           collection_date
+E21294149D  site1  /path/to/file.bam  2022-10-2
+5523DEB355  site6  /path/to/file.bam  2022-9-3
+FE3B496871  site2  /path/to/file.bam  2022-5-8
+E2A89A963D  site0  /path/to/file.bam  2022-6-5
+99508919E2  site1  /path/to/file.bam  2022-10-1
 ...
 ```
 ```
 $ vafdb tsv-create metadata.tsv
 <[200] OK>
 {
-    "sample_id": "71900E91F7",
+    "sample_id": "E21294149D",
     "task_id": "f13e7d1b-b4f6-40fd-890f-b100ca5b27ee"
 }
 <[200] OK>
@@ -45,49 +45,42 @@ $ vafdb tsv-create metadata.tsv
 ```python
 # script.py
 
-from vafdbclient import Client, Field, utils
+from vafdb import Client, utils, Field
 
 # Initialise client
 client = Client()
 
-# Send a query to the database
-result = client.query(
-    Field(coverage__gt=100)
-    & Field(collection_date__range=["2022-01-01", "2022-01-05"])
-    & (Field(site="site1") | Field(site="site2"))
-    & Field(entropy__gt=0.4)
-    & Field(pc_ds__lt=5)
+# Create a query
+query = (
+    Field(reference="MN908947.3")
+    & Field(sample_id="E21294149D")
+    & (
+        (Field(ref_base="C") & Field(base="T"))
+        | (Field(ref_base="T") & Field(base="C"))
+    )
+    & Field(confidence__gt=70)
+    & Field(coverage__gt=50)
 )
 
-# Create a pandas dataframe from the result
-df = utils.pandafy(result)
+# Send the query to the database
+responses = client.query(query)
 
+# Create a pandas dataframe from the result
+df = utils.pandafy(responses)
+
+# Print the result in tsv format
 print(df.to_csv(index=False, sep="\t"), end="")
+
 ```
 ```
 $ python script.py
-sample_id       reference       position        coverage        num_a   num_c   num_g   num_t   num_ds  pc_a    pc_c    pc_g    pc_t    pc_ds   entropy secondary_entropy       site    bam_path        collection_date       published_date  num_reads       num_vafs        mean_coverage   mean_entropy    references
-DD6630363B      MN908947.3      78      162     1       2       25      129     5       0.617   1.235   15.432  79.63   3.086   0.412   0.557   site2   /path/to/file.bam 2022-01-03      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-DD6630363B      MN908947.3      2198    1317    278     1       990     14      34      21.109  0.076   75.171  1.063   2.582   0.429   0.379   site2   /path/to/file.bam 2022-01-03      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-DD6630363B      MN908947.3      5736    1112    25      819     4       224     40      2.248   73.651  0.36    20.144  3.597   0.48    0.538   site2   /path/to/file.bam 2022-01-03      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-DD6630363B      MN908947.3      6078    498     6       355     0       127     10      1.205   71.285  0.0     25.502  2.008   0.448   0.306   site2   /path/to/file.bam 2022-01-03      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-DD6630363B      MN908947.3      10177   295     24      2       70      192     7       8.136   0.678   23.729  65.085  2.373   0.589   0.621   site2   /path/to/file.bam 2022-01-03      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-DD6630363B      MN908947.3      13476   1362    24      1079    7       199     53      1.762   79.222  0.514   14.611  3.891   0.429   0.622   site2   /path/to/file.bam 2022-01-03      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-DD6630363B      MN908947.3      19563   1252    109     13      1001    80      49      8.706   1.038   79.952  6.39    3.914   0.461   0.865   site2   /path/to/file.bam 2022-01-03      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-DD6630363B      MN908947.3      24057   693     96      8       562     9       18      13.853  1.154   81.097  1.299   2.597   0.402   0.617   site2   /path/to/file.bam 2022-01-03      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-DD6630363B      MN908947.3      24314   143     37      2       103     0       1       25.874  1.399   72.028  0.0     0.699   0.423   0.227   site2   /path/to/file.bam 2022-01-03      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-DD6630363B      MN908947.3      28915   5691    3150    2441    13      51      36      55.351  42.892  0.228   0.896   0.633   0.484   0.147   site2   /path/to/file.bam 2022-01-03      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-DD6630363B      MN908947.3      28916   5687    52      27      3260    2247    101     0.914   0.475   57.324  39.511  1.776   0.513   0.242   site2   /path/to/file.bam 2022-01-03      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-4428FC6352      MN908947.3      78      162     1       2       25      129     5       0.617   1.235   15.432  79.63   3.086   0.412   0.557   site1   /path/to/file.bam 2022-01-05      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-4428FC6352      MN908947.3      2198    1317    278     1       990     14      34      21.109  0.076   75.171  1.063   2.582   0.429   0.379   site1   /path/to/file.bam 2022-01-05      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-4428FC6352      MN908947.3      5736    1112    25      819     4       224     40      2.248   73.651  0.36    20.144  3.597   0.48    0.538   site1   /path/to/file.bam 2022-01-05      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-4428FC6352      MN908947.3      6078    498     6       355     0       127     10      1.205   71.285  0.0     25.502  2.008   0.448   0.306   site1   /path/to/file.bam 2022-01-05      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-4428FC6352      MN908947.3      10177   295     24      2       70      192     7       8.136   0.678   23.729  65.085  2.373   0.589   0.621   site1   /path/to/file.bam 2022-01-05      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-4428FC6352      MN908947.3      13476   1362    24      1079    7       199     53      1.762   79.222  0.514   14.611  3.891   0.429   0.622   site1   /path/to/file.bam 2022-01-05      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-4428FC6352      MN908947.3      19563   1252    109     13      1001    80      49      8.706   1.038   79.952  6.39    3.914   0.461   0.865   site1   /path/to/file.bam 2022-01-05      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-4428FC6352      MN908947.3      24057   693     96      8       562     9       18      13.853  1.154   81.097  1.299   2.597   0.402   0.617   site1   /path/to/file.bam 2022-01-05      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-4428FC6352      MN908947.3      24314   143     37      2       103     0       1       25.874  1.399   72.028  0.0     0.699   0.423   0.227   site1   /path/to/file.bam 2022-01-05      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-4428FC6352      MN908947.3      28915   5691    3150    2441    13      51      36      55.351  42.892  0.228   0.896   0.633   0.484   0.147   site1   /path/to/file.bam 2022-01-05      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-4428FC6352      MN908947.3      28916   5687    52      27      3260    2247    101     0.914   0.475   57.324  39.511  1.776   0.513   0.242   site1   /path/to/file.bam 2022-01-05      2022-11-23      123901  29903   1649.805        0.116   MN908947.3
-
+sample_id   ref_base  base  reference   position  coverage  confidence  diff  num_a  num_c  num_g  num_t  num_ds  pc_a   pc_c    pc_g   pc_t    pc_ds  entropy  secondary_entropy  site   bam_path                   
+E21294149D  C         T     MN908947.3  10029     361       91.69       True  1      14     1      331    14      0.277  3.878   0.277  91.69   3.878  0.226    0.677              site8  /path/to/file.bam...
+E21294149D  C         T     MN908947.3  14408     613       86.46       True  1      74     0      530    8       0.163  12.072  0.0    86.46   1.305  0.278    0.275              site8  /path/to/file.bam...
+E21294149D  C         T     MN908947.3  16466     199       90.452      True  1      15     1      180    2       0.503  7.538   0.503  90.452  1.005  0.239    0.529              site8  /path/to/file.bam...
+E21294149D  C         T     MN908947.3  19220     124       99.194      True  0      1      0      123    0       0.0    0.806   0.0    99.194  0.0    0.029    0.0                site8  /path/to/file.bam...
+E21294149D  C         T     MN908947.3  21846     516       94.961      True  2      7      6      490    11      0.388  1.357   1.163  94.961  2.132  0.163    0.904              site8  /path/to/file.bam...
+E21294149D  T         C     MN908947.3  26767     1351      90.6        True  10     1224   5      33     79      0.74   90.6    0.37   2.443   5.848  0.251    0.702              site8  /path/to/file.bam...
+E21294149D  T         C     MN908947.3  27638     110       91.818      True  0      101    1      4      4       0.0    91.818  0.909  3.636   3.636  0.225    0.696              site8  /path/to/file.bam...
+E21294149D  C         T     MN908947.3  27752     145       92.414      True  2      3      2      134    4       1.379  2.069   1.379  92.414  2.759  0.23     0.968              site8  /path/to/file.bam...
 ```
