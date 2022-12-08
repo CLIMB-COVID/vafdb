@@ -2,12 +2,20 @@ name: vafdb
 channels:
   - defaults
 dependencies:
+  # sudo apt-get install postgresql postgresql-contrib
+  # sudo apt-get install rabbitmq-server
+  - gunicorn
   - pybind11
   - pip
   - pip:
+    - psycopg2
     - django
     - djangorestframework
+    - django-filter
     - requests
     - pysam
     - numpy
-    - git+https://github.com/tombch/basecount@cdf987701ca0c075bad0251b9f4c949c74a4517c
+    - pandas
+    - git+https://github.com/tombch/basecount@1b809cfe48583d92ce660bec575f8adfce9d51c9
+    - celery
+    - biopython

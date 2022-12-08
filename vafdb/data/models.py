@@ -1,61 +1,86 @@
 from django.db import models
-
-# Create your models here.
-
-# TODO: All max_lengths are pretty arbitrary at the moment
-class MetadataRecord(models.Model):
-    pathogen = models.CharField(max_length=50)
-    central_sample_id = models.CharField(max_length=50)
-    run_name = models.CharField(max_length=100)
-    published_name = models.CharField(max_length=100, unique=True)
-    collection_date = models.DateField()
-    published_date = models.DateField(auto_now_add=True)
-    modified_date = models.DateTimeField(auto_now=True)
-    num_vafs = models.IntegerField()
-    fasta_path = models.CharField(max_length=500)
-    bam_path = models.TextField(max_length=500)
-    primer_scheme = models.CharField(max_length=10)
-    # TODO: lineage
-
-    class Meta:
-        unique_together = ["central_sample_id", "run_name"]
+from django.db.models import Field
+from django.db.models.lookups import BuiltinLookup
+from utils.functions import choices
+from utils.fields import UpperCharField
 
 
-# TODO: How do we want to structure this.
-# NOTE: Could have ref in metadata? ref in its own table?
-# class Reference(models.Model):
-#     metadata = models.ForeignKey(
-#         MetadataRecord, 
-#         on_delete=models.CASCADE, 
-#         related_name="vafs"
-#     )
-#     reference = models.CharField(max_length=50)
+@Field.register_lookup
+class NotEqual(models.Lookup):
+    lookup_name = "ne"
+
+    def as_sql(self, compiler, connection):
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        params = lhs_params + rhs_params
+        return "%s <> %s" % (lhs, rhs), params
 
 
-class VAFRecord(models.Model):
-    metadata_record = models.ForeignKey(
-        MetadataRecord, 
-        on_delete=models.CASCADE, 
-        related_name="vafs"
-    )
-    reference = models.CharField(max_length=50)
-    position = models.IntegerField()
+@Field.register_lookup
+class IsNull(BuiltinLookup):
+    lookup_name = "isnull"
+    prepare_rhs = False
+
+    def as_sql(self, compiler, connection):
+        if str(self.rhs) in ["0", "false", "False"]:
+            self.rhs = False
+
+        elif str(self.rhs) in ["1", "false", "False"]:
+            self.rhs = True
+
+        if not isinstance(self.rhs, bool):
+            raise ValueError(
+                "The QuerySet value for an isnull lookup must be True or False."
+            )
+
+        sql, params = compiler.compile(self.lhs)
+        if self.rhs:
+            return "%s IS NULL" % sql, params
+        else:
+            return "%s IS NOT NULL" % sql, params
+
+
+class Reference(models.Model):
+    name = models.TextField(unique=True)
+    sequence = models.TextField()
+
+
+class Metadata(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    sample_id = models.TextField(unique=True)
+    site = models.TextField(db_index=True)
+    bam_path = models.TextField()
+    collection_date = models.DateField(db_index=True)
+    published_date = models.DateField(auto_now_add=True, db_index=True)
+    num_reads = models.IntegerField(null=True)
+    num_vafs = models.IntegerField(null=True)
+    mean_coverage = models.FloatField(null=True)
+    mean_entropy = models.FloatField(null=True)
+    references = models.TextField(null=True)
+
+
+class VAF(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    metadata = models.ForeignKey(Metadata, on_delete=models.CASCADE, related_name="vaf")
+    reference = models.TextField(db_index=True)
+    position = models.IntegerField(db_index=True)
     coverage = models.IntegerField()
+    ref_base = UpperCharField(max_length=2, choices=choices(["A", "C", "T", "G", "DS"]))
+    base = UpperCharField(max_length=2, choices=choices(["A", "C", "T", "G", "DS"]))
+    confidence = models.FloatField()
+    diff = models.BooleanField()
     num_a = models.IntegerField()
     num_c = models.IntegerField()
     num_g = models.IntegerField()
     num_t = models.IntegerField()
     num_ds = models.IntegerField()
-    # consensus_base = models.CharField(
-    #     max_length=1,
-    #     choices=(
-    #         ("A", "A"),
-    #         ("C", "C"),
-    #         ("G", "G"),
-    #         ("T", "T"),
-    #         ("N", "N")
-    #     )
-    # )
+    pc_a = models.FloatField()
+    pc_c = models.FloatField()
+    pc_g = models.FloatField()
+    pc_t = models.FloatField()
+    pc_ds = models.FloatField()
+    entropy = models.FloatField()
+    secondary_entropy = models.FloatField()
 
     class Meta:
-        unique_together = ["metadata_record", "reference", "position"]
+        unique_together = ["metadata", "reference", "position"]
