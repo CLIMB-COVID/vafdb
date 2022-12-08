@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import CursorPagination
 from django.conf import settings
-from .models import VAF
+from .models import Metadata, VAF
 from .serializers import VAFSerializer
 from .tasks import create
 from .filters import VAFFilter
@@ -11,8 +11,11 @@ from utils.contextmanagers import mutable
 from utils.functions import make_keyvalues, get_query
 
 
-class CreateGetVAFView(APIView):
+class CreateGetView(APIView):
     def post(self, request):
+        """
+        Start the celery task for creating a `Metadata` instance and its `VAF` instances.
+        """
         # Kick off celery task
         task = create.delay(**request.data)
 
@@ -26,6 +29,9 @@ class CreateGetVAFView(APIView):
         )
 
     def get(self, request):
+        """
+        Use the provided `VAF` and `Metadata` fields to filter data.
+        """
         # Prepare paginator
         paginator = CursorPagination()
         paginator.ordering = "created"
@@ -99,8 +105,11 @@ class CreateGetVAFView(APIView):
         return paginator.get_paginated_response(serialized.data)
 
 
-class QueryVAFView(APIView):
+class QueryView(APIView):
     def post(self, request):
+        """
+        Use the provided `VAF` and `Metadata` fields to filter data.
+        """
         # Prepare paginator
         paginator = CursorPagination()
         paginator.ordering = "created"
@@ -189,3 +198,31 @@ class QueryVAFView(APIView):
 
         # Return paginated response
         return paginator.get_paginated_response(serialized.data)
+
+
+class DeleteView(APIView):
+    def delete(self, request, sample_id):
+        """
+        Use the provided `sample_id` to permanently delete a `Metadata` instance and its `VAF` instances.
+        """
+        try:
+            # Attempt to delete object with the provided sample_id
+            Metadata.objects.get(sample_id=sample_id).delete()
+        except Metadata.DoesNotExist:
+            # If the sample_id did not exist, return error
+            return Response(
+                {sample_id: "Not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check for the deletion
+        deleted = not Metadata.objects.filter(sample_id=sample_id).exists()
+
+        # Return response indicating successful deletion
+        return Response(
+            {
+                "sample_id": sample_id,
+                "deleted": deleted,
+            },
+            status=status.HTTP_200_OK,
+        )

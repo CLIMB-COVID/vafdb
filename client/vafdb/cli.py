@@ -63,6 +63,18 @@ class CLI:
             else:
                 utils.print_response(result)
 
+    def delete(self, sample_id):
+        deletion = self.client.delete(sample_id)
+        utils.print_response(deletion)
+
+    def csv_delete(self, csv_path):
+        deletions = self.client.csv_delete(csv_path)
+        utils.execute_uploads(deletions)
+
+    def tsv_delete(self, tsv_path):
+        deletions = self.client.csv_delete(tsv_path, delimiter="\t")
+        utils.execute_uploads(deletions)
+
 
 def run(args):
     if args.command:
@@ -79,6 +91,15 @@ def run(args):
 
         elif args.command == "get":
             cli.get(args.field)
+
+        elif args.command == "delete":
+            cli.delete(args.sample_id)
+
+        elif args.command == "csv-delete":
+            cli.csv_delete(args.csv)
+
+        elif args.command == "tsv-delete":
+            cli.tsv_delete(args.tsv)
 
 
 def get_args():
@@ -112,6 +133,15 @@ def get_args():
     get_parser.add_argument(
         "-f", "--field", nargs=2, action="append", metavar=("FIELD", "VALUE")
     )
+
+    delete_parser = command.add_parser("delete", parents=[url_parser])
+    delete_parser.add_argument("sample_id")
+
+    csv_delete_parser = command.add_parser("csv-delete", parents=[url_parser])
+    csv_delete_parser.add_argument("csv")
+
+    tsv_delete_parser = command.add_parser("tsv-delete", parents=[url_parser])
+    tsv_delete_parser.add_argument("tsv")
 
     args = parser.parse_args()
 
