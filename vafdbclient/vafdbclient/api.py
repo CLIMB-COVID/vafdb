@@ -10,7 +10,7 @@ class Client:
         self.endpoints = {
             "create": f"{self.url}/data/",
             "get": f"{self.url}/data/",
-            "query": f"{self.url}/data/query/"
+            "query": f"{self.url}/data/query/",
         }
 
     def create(self, fields):
