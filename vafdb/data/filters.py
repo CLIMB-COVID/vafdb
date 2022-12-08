@@ -47,7 +47,7 @@ BOOLEAN_CHOICES = (
 )
 
 
-# All filterable fields within the VAF table, and their field type
+# All filterable fields and their field type
 fields = {
     "metadata__sample_id": "text",
     "metadata__site": "text",
@@ -60,16 +60,18 @@ fields = {
     "metadata__references": "text",
     "reference": "text",
     "position": "number",
+    "insert_position": "number",
+    "position_type": "choice",
     "coverage": "number",
+    "ref_base": "choice",
+    "base": "choice",
+    "confidence": "number",
+    "diff": "bool",
     "num_a": "number",
     "num_c": "number",
     "num_g": "number",
     "num_t": "number",
     "num_ds": "number",
-    "ref_base": "choices",
-    "base": "choices",
-    "confidence": "number",
-    "diff": "bool",
     "pc_a": "number",
     "pc_c": "number",
     "pc_g": "number",
@@ -106,7 +108,7 @@ class VAFFilter(filters.FilterSet):
                 self.metadata_fields.append(filter_name)
 
             # If field is a choice type, construct choice filters for it
-            if field_type == "choices":
+            if field_type == "choice":
                 choices = VAF._meta.get_field(field).choices
 
                 self.filters[filter_name] = filters.ChoiceFilter(
