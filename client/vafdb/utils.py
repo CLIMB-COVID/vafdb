@@ -3,21 +3,24 @@ import json
 import pandas as pd
 
 
-def pandafy(response):
+def pandafy(responses):
     """
-    Takes a response and TURNS IT INTO A PANDA
+    Takes a response generator and TURNS IT INTO A PANDA
     """
+    response = next(responses)
     response.raise_for_status()
 
     meta_fields = None
     columns = None
+    tables = []
 
-    if response.json():
-        meta_fields = list(response.json()[0].keys())
+    if response.json()["results"]:
+        meta_fields = list(response.json()["results"][0].keys())
         meta_fields.pop(meta_fields.index("vaf"))
 
-    table = pd.json_normalize(response.json(), record_path=["vaf"], meta=meta_fields)
-
+    table = pd.json_normalize(
+        response.json()["results"], record_path=["vaf"], meta=meta_fields
+    )
     if meta_fields is not None:
         columns = (
             [meta_fields[0]]
@@ -25,8 +28,18 @@ def pandafy(response):
             + table.columns.tolist()[-len(meta_fields) + 1 :]
         )
         table = table[columns]
+    tables.append(table)
 
-    return table
+    for response in responses:
+        response.raise_for_status()
+        table = pd.json_normalize(
+            response.json()["results"], record_path=["vaf"], meta=meta_fields
+        )
+        if (meta_fields is not None) and (columns is not None):
+            table = table[columns]
+        tables.append(table)
+
+    return pd.concat(tables)
 
 
 def construct_fields_dict(arg_fields):
