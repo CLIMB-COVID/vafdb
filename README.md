@@ -84,3 +84,43 @@ E21294149D  T         C     MN908947.3  26767     1351      90.6        True  10
 E21294149D  T         C     MN908947.3  27638     110       91.818      True  0      101    1      4      4       0.0    91.818  0.909  3.636   3.636  0.225    0.696              site8  /path/to/file.bam...
 E21294149D  C         T     MN908947.3  27752     145       92.414      True  2      3      2      134    4       1.379  2.069   1.379  92.414  2.759  0.23     0.968              site8  /path/to/file.bam...
 ```
+
+## Deleting data
+#### Delete a single sample
+```
+$ vafdb delete E21294149D
+<[200] OK>
+{
+    "sample_id": "E21294149D",
+    "deleted": true
+}
+```
+#### Delete multiple samples
+```
+$ vafdb tsv-delete metadata.tsv
+<[404] Not Found>
+{
+    "E21294149D": "Not found."
+}
+<[200] OK>
+{
+    "sample_id": "5523DEB355",
+    "deleted": true
+}
+<[200] OK>
+{
+    "sample_id": "FE3B496871",
+    "deleted": true
+}
+<[200] OK>
+{
+    "sample_id": "E2A89A963D",
+    "deleted": true
+}
+<[200] OK>
+{
+    "sample_id": "99508919E2",
+    "deleted": true
+}
+...
+```
