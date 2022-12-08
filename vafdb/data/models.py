@@ -67,8 +67,8 @@ class VAF(models.Model):
     reference = models.TextField(db_index=True)
 
     position = models.IntegerField(db_index=True)
-    position_type = UpperCharField(max_length=3, choices=choices(["REF", "INS"]))
     insert_position = models.IntegerField(db_index=True)
+    position_type = UpperCharField(max_length=3, choices=choices(["REF", "INS"]))
 
     coverage = models.IntegerField()
 
