@@ -1,3 +1,3 @@
-from vafdbclient.api import Client
-from vafdbclient.field import Field
-from vafdbclient import utils
+from vafdb.api import Client
+from vafdb.field import Field
+from vafdb import utils

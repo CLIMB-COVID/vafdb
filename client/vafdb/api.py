@@ -1,7 +1,7 @@
 import csv
 import sys
 import requests
-from vafdbclient.field import Field
+from vafdb.field import Field
 
 
 class Client:

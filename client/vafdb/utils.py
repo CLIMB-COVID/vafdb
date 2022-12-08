@@ -8,7 +8,10 @@ def pandafy(responses):
     Takes a response generator and TURNS IT INTO A PANDA
     """
     response = next(responses)
-    response.raise_for_status()
+
+    if not response.ok:
+        print_response(response)
+        response.raise_for_status()
 
     meta_fields = None
     columns = None
@@ -31,7 +34,11 @@ def pandafy(responses):
     tables.append(table)
 
     for response in responses:
-        response.raise_for_status()
+
+        if not response.ok:
+            print_response(response)
+            response.raise_for_status()
+
         table = pd.json_normalize(
             response.json()["results"], record_path=["vaf"], meta=meta_fields
         )
