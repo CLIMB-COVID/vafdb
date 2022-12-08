@@ -1,7 +1,7 @@
 import csv
 import sys
 import requests
-from vafdbclient.field import Field
+from vafdb.field import Field
 
 
 class Client:
@@ -78,8 +78,19 @@ class Client:
         if not isinstance(query, Field):
             raise Exception("Query must be of type Field")
 
-        response = requests.post(
-            self.endpoints["query"],
-            json=query.query,
-        )
-        return response
+        response = requests.post(self.endpoints["query"], json=query.query)
+        yield response
+
+        if response.ok:
+            _next = response.json()["next"]
+        else:
+            _next = None
+
+        while _next is not None:
+            response = requests.post(_next, json=query.query)
+            yield response
+
+            if response.ok:
+                _next = response.json()["next"]
+            else:
+                _next = None

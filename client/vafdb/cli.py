@@ -1,7 +1,7 @@
 import argparse
 import pandas as pd
-from vafdbclient import version, utils
-from vafdbclient.api import Client
+from vafdb import version, utils
+from vafdb.api import Client
 
 
 class CLI:
