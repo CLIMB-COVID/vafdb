@@ -72,6 +72,8 @@ def create(**metadata):
                 vaf = {
                     "reference": record["reference"],
                     "position": record["position"],
+                    "insert_position": 0,
+                    "position_type": "REF",
                     "coverage": record["coverage"],
                     "ref_base": ref_base,
                     "base": record["base"],
