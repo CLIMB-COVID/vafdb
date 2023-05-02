@@ -2,14 +2,10 @@ name: vafdb
 channels:
   - defaults
 dependencies:
-  # postgresql
-  # postgresql-contrib
-  # rabbitmq-server
   - gunicorn
   - pybind11
   - pip
   - pip:
-    - psycopg2
     - django
     - djangorestframework
     - django-filter
@@ -19,4 +15,5 @@ dependencies:
     - pandas
     - celery
     - biopython
-    - git+https://github.com/tombch/basecount.git#egg=basecount
+    - maptide
+    

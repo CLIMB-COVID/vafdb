@@ -22,7 +22,7 @@ def debug_task(self):
     print(f"Request: {self.request!r}")
 
 
-# app.conf.task_routes = {
-#     "data.tasks.count": {"queue": "count_queue"},
-#     "data.tasks.create": {"queue": "create_queue"},
-# }
+app.conf.task_routes = {
+    "data.tasks.generate": {"queue": "generate_queue"},
+    "data.tasks.store": {"queue": "store_queue"},
+}
