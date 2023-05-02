@@ -4,11 +4,11 @@ def check_kwargs(kwargs):
 
 
 def check_field(field):
-    if not isinstance(field, Field):
+    if not isinstance(field, F):
         raise Exception("Can only combine field with other fields")
 
 
-class Field:
+class F:
     def __init__(self, **kwargs):
         check_kwargs(kwargs)
 
@@ -21,15 +21,15 @@ class Field:
 
     def __and__(self, field):
         check_field(field)
-        return Field(**{"&": [self.query, field.query]})
+        return F(**{"&": [self.query, field.query]})
 
     def __or__(self, field):
         check_field(field)
-        return Field(**{"|": [self.query, field.query]})
+        return F(**{"|": [self.query, field.query]})
 
     def __xor__(self, field):
         check_field(field)
-        return Field(**{"^": [self.query, field.query]})
+        return F(**{"^": [self.query, field.query]})
 
     def __invert__(self):
-        return Field(**{"~": [self.query]})
+        return F(**{"~": [self.query]})

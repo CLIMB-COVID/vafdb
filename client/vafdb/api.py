@@ -1,32 +1,33 @@
 import csv
 import sys
 import requests
-from vafdb.field import Field
+from vafdb.field import F
+import concurrent.futures
 
 
 class Client:
-    def __init__(self, host: str = "localhost", port: int = 8000):
+    def __init__(self, host="localhost", port=8000):
         self.url = f"http://{host}:{port}"
         self.endpoints = {
-            "create": f"{self.url}/data/",
-            "get": f"{self.url}/data/",
-            "query": f"{self.url}/data/query/",
-            "delete": lambda x: f"{self.url}/data/{x}",
+            "generate": lambda project: f"{self.url}/data/generate/{project}/",
+            "filter": lambda project: f"{self.url}/data/filter/{project}/",
+            "query": lambda project: f"{self.url}/data/query/{project}/",
+            "delete": lambda project, sample_id: f"{self.url}/data/delete/{project}/{sample_id}/",
         }
 
-    def create(self, fields):
+    def generate(self, project, fields):
         """
-        Post a metadata record to `vafdb`.
+        Generate VAFs from metadata.
         """
         response = requests.post(
-            self.endpoints["create"],
+            url=self.endpoints["generate"](project),
             json=fields,
         )
         return response
 
-    def csv_create(self, csv_path: str, delimiter: str | None = None):
+    def csv_generate(self, project, csv_path, delimiter=None, multithreaded=True):
         """
-        Post a .csv or .tsv containing multiple metadata records to `vafdb`.
+        "Generate VAFs from metadata provided via CSV/TSV."
         """
         if csv_path == "-":
             csv_file = sys.stdin
@@ -38,24 +39,49 @@ class Client:
             else:
                 reader = csv.DictReader(csv_file, delimiter=delimiter)
 
-            for record in reader:
+            record = next(reader, None)
+
+            if record:
                 response = requests.post(
-                    self.endpoints["create"],
+                    url=self.endpoints["generate"](project),
                     json=record,
                 )
                 yield response
+
+                if multithreaded:
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        futures = [
+                            executor.submit(
+                                requests.post,
+                                url=self.endpoints["generate"](project),
+                                json=record,
+                            )
+                            for record in reader
+                        ]
+                        for future in concurrent.futures.as_completed(futures):
+                            yield future.result()
+                else:
+                    for record in reader:
+                        response = requests.post(
+                            url=self.endpoints["generate"](project),
+                            json=record,
+                        )
+                        yield response
         finally:
             if csv_file is not sys.stdin:
                 csv_file.close()
 
-    def get(self, fields=None):
+    def filter(self, project, fields=None):
         """
-        Retrieve data from `vafdb`.
+        Filter VAFs and their metadata.
         """
         if fields is None:
             fields = {}
 
-        response = requests.get(self.endpoints["get"], params=fields)
+        response = requests.get(
+            url=self.endpoints["filter"](project),
+            params=fields,
+        )
         yield response
 
         if response.ok:
@@ -64,7 +90,9 @@ class Client:
             _next = None
 
         while _next is not None:
-            response = requests.get(_next)
+            response = requests.get(
+                url=_next,
+            )
             yield response
 
             if response.ok:
@@ -72,14 +100,20 @@ class Client:
             else:
                 _next = None
 
-    def query(self, query):
+    def query(self, project, query=None):
         """
-        Retrieve data from `vafdb`.
+        Query VAFs and their metadata.
         """
-        if not isinstance(query, Field):
-            raise Exception("Query must be of type Field")
+        if query:
+            if not isinstance(query, F):
+                raise Exception("Query must be an F object")
+            else:
+                query = query.query
 
-        response = requests.post(self.endpoints["query"], json=query.query)
+        response = requests.post(
+            url=self.endpoints["query"](project),
+            json=query,
+        )
         yield response
 
         if response.ok:
@@ -88,7 +122,10 @@ class Client:
             _next = None
 
         while _next is not None:
-            response = requests.post(_next, json=query.query)
+            response = requests.post(
+                url=_next,
+                json=query,
+            )
             yield response
 
             if response.ok:
@@ -96,16 +133,18 @@ class Client:
             else:
                 _next = None
 
-    def delete(self, sample_id):
+    def delete(self, project, sample_id):
         """
-        Suppress data in `vafdb`.
+        "Delete VAFs and their metadata."
         """
-        response = requests.delete(self.endpoints["delete"](sample_id))
+        response = requests.delete(
+            url=self.endpoints["delete"](project, sample_id),
+        )
         return response
 
-    def csv_delete(self, csv_path, delimiter=None):
+    def csv_delete(self, project, csv_path, delimiter=None):
         """
-        Use a .csv or .tsv to delete data in `vafdb`.
+        Delete VAFS from metadata provided via CSV/TSV."
         """
         if csv_path == "-":
             csv_file = sys.stdin
@@ -122,7 +161,9 @@ class Client:
                 if sample_id is None:
                     raise KeyError("sample_id column must be provided")
 
-                response = requests.delete(self.endpoints["delete"](sample_id))
+                response = requests.delete(
+                    url=self.endpoints["delete"](project, sample_id),
+                )
                 yield response
         finally:
             if csv_file is not sys.stdin:
