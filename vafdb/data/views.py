@@ -3,35 +3,66 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import CursorPagination
 from django.conf import settings
-from .models import Metadata, VAF
-from .serializers import VAFSerializer
-from .tasks import create
+from .models import Project, Metadata, VAF
+from .serializers import VAFSerializer, MetadataSerializer
+from .tasks import generate, store
 from .filters import VAFFilter
 from utils.contextmanagers import mutable
 from utils.functions import make_keyvalues, get_query
 
 
-class CreateGetView(APIView):
-    def post(self, request):
+class GenerateView(APIView):
+    def post(self, request, code):
         """
-        Start the celery task for creating a `Metadata` instance and its `VAF` instances.
+        Generate VAFs from metadata.
         """
-        # Kick off celery task
-        task = create.delay(**request.data)
+        # Get the project
+        try:
+            project = Project.objects.get(code=code)
+        except Project.DoesNotExist:
+            return Response(
+                {"detail": "Project not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-        # Return response with sample id and task id
+        # Validate the metadata
+        request.data["project"] = project.id  # type: ignore
+        serializer = MetadataSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors,
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+        # Kick off celery task chain
+        task = (generate.s(code, request.data) | store.s()).apply_async()
+
+        # Return project code, sample_id and task_id
         return Response(
             {
+                "project": project.code,
                 "sample_id": request.data.get("sample_id"),
                 "task_id": task.id,
             },
             status=status.HTTP_200_OK,
         )
 
-    def get(self, request):
+
+class FilterView(APIView):
+    def get(self, request, code):
         """
-        Use the provided `VAF` and `Metadata` fields to filter data.
+        Filter VAFs and metadata.
         """
+        # Get the project
+        try:
+            project = Project.objects.get(code=code)
+        except Project.DoesNotExist:
+            return Response(
+                {"detail": "Project not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
         # Prepare paginator
         paginator = CursorPagination()
         paginator.ordering = "created"
@@ -58,7 +89,11 @@ class CreateGetView(APIView):
         errors = {}
 
         # Initial queryset
-        qs = VAF.objects.select_related("metadata").all()
+        qs = (
+            VAF.objects.select_related("metadata")
+            .filter(metadata__project=project)
+            .all()
+        )
 
         # A filterset can only take a a query with one of each field at a time
         # So given that the get view only AND's fields together, we can represent this
@@ -106,10 +141,19 @@ class CreateGetView(APIView):
 
 
 class QueryView(APIView):
-    def post(self, request):
+    def post(self, request, code):
         """
-        Use the provided `VAF` and `Metadata` fields to filter data.
+        Query VAFs and metadata.
         """
+        # Get the project
+        try:
+            project = Project.objects.get(code=code)
+        except Project.DoesNotExist:
+            return Response(
+                {"detail": "Project not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
         # Prepare paginator
         paginator = CursorPagination()
         paginator.ordering = "created"
@@ -182,7 +226,11 @@ class QueryView(APIView):
         query = get_query(request.data)
 
         # Then filter using the Q object
-        qs = VAF.objects.select_related("metadata").filter(query)
+        qs = (
+            VAF.objects.select_related("metadata")
+            .filter(metadata__project=project)
+            .filter(query)
+        )
 
         # Add the pagination cursor param back into the request
         if cursor is not None:
@@ -201,26 +249,39 @@ class QueryView(APIView):
 
 
 class DeleteView(APIView):
-    def delete(self, request, sample_id):
+    def delete(self, request, code, sample_id):
         """
-        Use the provided `sample_id` to permanently delete a `Metadata` instance and its `VAF` instances.
+        Delete VAFs and metadata.
         """
+        # Get the project
+        try:
+            project = Project.objects.get(code=code)
+        except Project.DoesNotExist:
+            return Response(
+                {"detail": "Project not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
         try:
             # Attempt to delete object with the provided sample_id
-            Metadata.objects.get(sample_id=sample_id).delete()
+            Metadata.objects.get(project=project, sample_id=sample_id).delete()
         except Metadata.DoesNotExist:
             # If the sample_id did not exist, return error
             return Response(
-                {sample_id: "Not found."},
+                {"detail": "Sample ID not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
         # Check for the deletion
-        deleted = not Metadata.objects.filter(sample_id=sample_id).exists()
+        deleted = not Metadata.objects.filter(
+            project=project,
+            sample_id=sample_id,
+        ).exists()
 
         # Return response indicating successful deletion
         return Response(
             {
+                "project": project.code,
                 "sample_id": sample_id,
                 "deleted": deleted,
             },

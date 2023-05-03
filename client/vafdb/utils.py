@@ -1,6 +1,7 @@
 import sys
 import json
 import pandas as pd
+import requests
 
 
 def pandafy(responses):
@@ -34,7 +35,6 @@ def pandafy(responses):
     tables.append(table)
 
     for response in responses:
-
         if not response.ok:
             print_response(response)
             response.raise_for_status()
@@ -103,6 +103,14 @@ def print_response(response, pretty_print=True):
         print(formatted_response)
     else:
         print(formatted_response, file=sys.stderr)
+
+
+def raise_for_status(response):
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as e:
+        print_response(response)
+        raise e
 
 
 def execute_uploads(uploads):

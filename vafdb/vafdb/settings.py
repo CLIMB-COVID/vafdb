@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
-import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,10 +20,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# If you intend for this API to be public facing, you MUST generate a secret key!
 
 # python manage.py shell
 # from django.core.management.utils import get_random_secret_key
-SECRET_KEY = os.environ["VAFDB_DJANGO_SECRET_KEY"]
+SECRET_KEY = "not_so_secret"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -80,20 +80,19 @@ WSGI_APPLICATION = "vafdb.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": os.environ["VAFDB_SQLITE_DB_PATH"],
-#     }
-# }
-
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ["VAFDB_POSTGRES_DB_NAME"],
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": "vafdb.sqlite3",
     }
 }
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": "vafdb",
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -136,8 +135,20 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+}
+
 # Custom settings used in the project
 CURSOR_PAGINATION_PAGE_SIZE = 5000
 FLOATFIELD_DECIMAL_PLACES = 3
-MIN_BASE_QUALITY = 0
-MIN_MAPPING_QUALITY = 0

@@ -8,26 +8,21 @@ class CLI:
     def __init__(self, host="localhost", port=8000):
         self.client = Client(host=host, port=port)
 
-    def create(self, fields):
+    def generate(self, project, fields):
         fields = utils.construct_unique_fields_dict(fields)
-        creation = self.client.create(fields)
-        utils.print_response(creation)
+        result = self.client.generate(project, fields)
+        utils.print_response(result)
 
-    def csv_create(self, csv_path):
-        creations = self.client.csv_create(csv_path)
-        utils.execute_uploads(creations)
+    def csv_generate(self, project, csv_path, delimiter=None):
+        results = self.client.csv_generate(project, csv_path, delimiter=delimiter)
+        utils.execute_uploads(results)
 
-    def tsv_create(self, tsv_path):
-        creations = self.client.csv_create(tsv_path, delimiter="\t")
-        utils.execute_uploads(creations)
-
-    def get(self, fields):
+    def filter(self, project, fields):
         fields = utils.construct_fields_dict(fields)
 
-        results = self.client.get(fields)
+        results = self.client.filter(project, fields)
 
         result = next(results)
-
         meta_fields = None
         columns = None
 
@@ -63,51 +58,47 @@ class CLI:
             else:
                 utils.print_response(result)
 
-    def delete(self, sample_id):
-        deletion = self.client.delete(sample_id)
-        utils.print_response(deletion)
+    def delete(self, project, sample_id):
+        result = self.client.delete(project, sample_id)
+        utils.print_response(result)
 
-    def csv_delete(self, csv_path):
-        deletions = self.client.csv_delete(csv_path)
-        utils.execute_uploads(deletions)
-
-    def tsv_delete(self, tsv_path):
-        deletions = self.client.csv_delete(tsv_path, delimiter="\t")
-        utils.execute_uploads(deletions)
+    def csv_delete(self, project, csv_path, delimiter=None):
+        results = self.client.csv_delete(project, csv_path, delimiter=delimiter)
+        utils.execute_uploads(results)
 
 
 def run(args):
-    if args.command:
-        cli = CLI(args.host, args.port)
+    cli = CLI(args.host, args.port)
 
-        if args.command == "create":
-            cli.create(args.field)
+    if args.command == "generate":
+        if args.field:
+            cli.generate(args.project, args.field)
+        elif args.csv:
+            cli.csv_generate(args.project, args.csv)
+        elif args.tsv:
+            cli.csv_generate(args.project, args.tsv, delimiter="\t")
 
-        elif args.command == "csv-create":
-            cli.csv_create(args.csv)
+    elif args.command == "filter":
+        cli.filter(args.project, args.field)
 
-        elif args.command == "tsv-create":
-            cli.tsv_create(args.tsv)
-
-        elif args.command == "get":
-            cli.get(args.field)
-
-        elif args.command == "delete":
-            cli.delete(args.sample_id)
-
-        elif args.command == "csv-delete":
-            cli.csv_delete(args.csv)
-
-        elif args.command == "tsv-delete":
-            cli.tsv_delete(args.tsv)
+    elif args.command == "delete":
+        if args.sample_id:
+            cli.delete(args.project, args.sample_id)
+        elif args.csv:
+            cli.csv_delete(args.project, args.csv)
+        elif args.tsv:
+            cli.csv_delete(args.project, args.tsv, delimiter="\t")
 
 
 def get_args():
     url_parser = argparse.ArgumentParser(add_help=False)
-    url_parser.add_argument("--host", default="localhost")
-    url_parser.add_argument("--port", default="8000")
-
-    parser = argparse.ArgumentParser()
+    url_parser.add_argument(
+        "--host", default="localhost", help="Host of VAFDB instance. Default: localhost"
+    )
+    url_parser.add_argument(
+        "--port", default="8000", help="Port number of VAFDB instance. Default: 8000"
+    )
+    parser = argparse.ArgumentParser(parents=[url_parser])
     parser.add_argument(
         "-v",
         "--version",
@@ -115,36 +106,43 @@ def get_args():
         version=version.__version__,
         help="Client version number.",
     )
-
-    command = parser.add_subparsers(dest="command", metavar="{command}")
-
-    create_parser = command.add_parser("create", parents=[url_parser])
-    create_parser.add_argument(
+    command = parser.add_subparsers(dest="command", metavar="{command}", required=True)
+    generate_parser = command.add_parser(
+        "generate", help="Generate VAFs from metadata."
+    )
+    generate_parser.add_argument("project")
+    generate_exclusive_parser = generate_parser.add_mutually_exclusive_group(
+        required=True
+    )
+    generate_exclusive_parser.add_argument(
         "-f", "--field", nargs=2, action="append", metavar=("FIELD", "VALUE")
     )
-
-    csv_create_parser = command.add_parser("csv-create", parents=[url_parser])
-    csv_create_parser.add_argument("csv")
-
-    tsv_create_parser = command.add_parser("tsv-create", parents=[url_parser])
-    tsv_create_parser.add_argument("tsv")
-
-    get_parser = command.add_parser("get", parents=[url_parser])
-    get_parser.add_argument(
+    generate_exclusive_parser.add_argument(
+        "--csv", help="Generate VAFs from metadata provided via CSV."
+    )
+    generate_exclusive_parser.add_argument(
+        "--tsv", help="Generate VAFs from metadata provided via TSV."
+    )
+    filter_parser = command.add_parser("filter", help="Filter VAFs and their metadata.")
+    filter_parser.add_argument("project")
+    filter_parser.add_argument(
         "-f", "--field", nargs=2, action="append", metavar=("FIELD", "VALUE")
     )
-
-    delete_parser = command.add_parser("delete", parents=[url_parser])
-    delete_parser.add_argument("sample_id")
-
-    csv_delete_parser = command.add_parser("csv-delete", parents=[url_parser])
-    csv_delete_parser.add_argument("csv")
-
-    tsv_delete_parser = command.add_parser("tsv-delete", parents=[url_parser])
-    tsv_delete_parser.add_argument("tsv")
-
+    delete_parser = command.add_parser("delete", help="Delete VAFs and their metadata.")
+    delete_parser.add_argument("project")
+    delete_exclusive_parser = delete_parser.add_mutually_exclusive_group(required=True)
+    delete_exclusive_parser.add_argument(
+        "sample_id",
+        nargs="?",
+        help="[optional] Delete all VAFs for the provided sample_id.",
+    )
+    delete_exclusive_parser.add_argument(
+        "--csv", help="Delete VAFS from metadata provided via CSV."
+    )
+    delete_exclusive_parser.add_argument(
+        "--tsv", help="Delete VAFS from metadata provided via TSV."
+    )
     args = parser.parse_args()
-
     return args
 
 
