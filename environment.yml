@@ -3,15 +3,12 @@ channels:
   - defaults
 dependencies:
   - gunicorn
-  - pybind11
   - pip
   - pip:
     - django
     - djangorestframework
     - django-filter
     - requests
-    - pysam
-    - numpy
     - pandas
     - celery
     - biopython
