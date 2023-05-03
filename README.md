@@ -28,11 +28,12 @@ Stopping PIDs: 15292 15293 15294
 VAFDB stopped.
 ```
 
-## Create a project
+## Projects
+Define a project:
 ```
 $ python manage.py newproject example_project --references /path/to/references.fasta
 ```
-#### Project creation options
+The following arguments can be provided when defining a project:
 ```
 positional arguments:
   code
@@ -59,12 +60,13 @@ options:
                         [optional] Only store VAFs with a different base from the reference, above a
                         certain confidence. Default: None
 ```
-## Delete a project
+To delete a project:
 ```
 $ python manage.py deleteproject example_project
 ```
 
 ## Generate data for a project
+Create a metadata file, containing paths to BAM files:
 ```
 $ cat metadata.tsv
 sample_id   site   bam_path           collection_date
@@ -75,6 +77,7 @@ E2A89A963D  site0  /path/to/file.bam  2022-6-5
 99508919E2  site1  /path/to/file.bam  2022-10-1
 ...
 ```
+Call `vafdb generate`, with a project name, and the metadata file as an argument:
 ```
 $ vafdb generate example_project --tsv metadata.tsv
 <[200] OK>
@@ -111,13 +114,13 @@ $ vafdb generate example_project --tsv metadata.tsv
 ```
 
 ## Retrieve data from a project
-#### Filtering from the CLI
+Filter data via the CLI, and send the results to a file:
 ```
-$ vafdb filter example_project --field reference chrom1 --field position__range 250,300
-$ vafdb filter example_project --field sample_id E2A89A963D
-$ vafdb filter example_project --field position 500 --field collection_date__gt 2023-01-01
+$ vafdb filter example_project --field reference chrom1 --field position__range 250,300 > vafs.tsv
+$ vafdb filter example_project --field sample_id E2A89A963D > vafs.tsv
+$ vafdb filter example_project --field position 500 --field collection_date__gt 2023-01-01 > vafs.tsv
 ```
-#### Querying from a python script
+Execute complex filtering via the python client API:
 ```python
 # script.py
 
