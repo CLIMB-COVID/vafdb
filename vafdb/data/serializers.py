@@ -19,6 +19,7 @@ class VAFListSerializer(serializers.ListSerializer):
             id = record["metadata"]["id"]
             md = record.pop("metadata")
             md.pop("id")
+            md.pop("project")
 
             if not id in transformed_data:
                 transformed_data[id] = md
