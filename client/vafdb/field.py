@@ -40,7 +40,7 @@ def combine_on_associative(operation, field1, field2):
         field1_query = [field1.query]
 
     if field2_key == operation:
-        field2_query = field2.query[field1_key]
+        field2_query = field2.query[field2_key]
     else:
         field2_query = [field2.query]
 
