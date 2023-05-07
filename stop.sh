@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-cd "${0%/*}"
-VAFDB_PIDS=`cat logs/vafdb.pids`
-echo "Stopping PIDs: ${VAFDB_PIDS}"
-kill $VAFDB_PIDS
+pkill -f "gunicorn vafdb.wsgi"
+pkill -f "celery -A vafdb"
 echo "VAFDB stopped."
