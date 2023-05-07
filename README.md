@@ -6,26 +6,37 @@ Clone the repository:
 $ git clone https://github.com/CLIMB-COVID/vafdb.git
 $ cd vafdb/
 ```
-Create and activate the `vafdb` conda environment:
-```
-$ conda env create -f environment.yml
-$ conda activate vafdb
-```
-Run the `setup.sh` script to build the client and initialise the database:
+Run the `setup.sh` script. This creates the `vafdb` conda environment, initialises the database and builds the client program:
 ```
 $ ./setup.sh
 ```
-Then, to start the `vafdb` server, run the `start.sh` script:
+To start the `vafdb` server, run the `start.sh` script:
 ```
 $ ./start.sh
-Starting PIDs: 15292 15293 15294
 VAFDB started.
 ```
 To stop the `vafdb` server, run the `stop.sh` script:
 ```
 $ ./stop.sh
-Stopping PIDs: 15292 15293 15294
 VAFDB stopped.
+```
+Once the conda environment is activated, the client program can be used:
+```
+$ conda activate vafdb
+$ vafdb -h
+usage: vafdb [-h] [--host HOST] [--port PORT] [-v] {command} ...
+
+positional arguments:
+  {command}
+    generate     Generate VAFs from metadata.
+    filter       Filter VAFs and their metadata.
+    delete       Delete VAFs and their metadata.
+
+options:
+  -h, --help     show this help message and exit
+  --host HOST    Host of VAFDB instance. Default: localhost
+  --port PORT    Port number of VAFDB instance. Default: 8000
+  -v, --version  Client version number.
 ```
 
 ## Projects
@@ -114,13 +125,13 @@ $ vafdb generate example_project --tsv metadata.tsv
 ```
 
 ## Retrieve data from a project
-Filter data via the CLI, and send the results to a file:
+Filter data via the CLI with `vafdb filter`, and send the results to a file:
 ```
 $ vafdb filter example_project --field reference chrom1 --field position__range 250,300 > vafs.tsv
 $ vafdb filter example_project --field sample_id E2A89A963D > vafs.tsv
 $ vafdb filter example_project --field position 500 --field collection_date__gt 2023-01-01 > vafs.tsv
 ```
-Execute complex filtering via the python client API:
+Execute complex filtering via the python client API with `vafdb query`:
 ```python
 # script.py
 
