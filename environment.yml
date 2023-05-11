@@ -13,4 +13,4 @@ dependencies:
     - celery
     - biopython
     - maptide
-    
+    - django-query-tools

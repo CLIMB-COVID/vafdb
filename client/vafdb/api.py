@@ -1,8 +1,8 @@
 import csv
 import sys
 import requests
-from vafdb.field import F
 import concurrent.futures
+from django_query_tools.client import F
 
 
 class Client:
