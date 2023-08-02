@@ -69,7 +69,6 @@ def generate(code, metadata):
         bai=metadata.get("bai_path"),
         mapping_quality=project.mapping_quality,
         base_quality=project.base_quality,
-        indexed=True if metadata.get("bai_path") else False,
     )
 
     # Maptide output columns
@@ -102,9 +101,11 @@ def generate(code, metadata):
     for record in iterate(mp, region=project.region, stats=True):
         record = dict(zip(columns, record))
 
+        # If the project is not recording insertions, skip any non-ref VAFS
         if (not project.insertions) and record["insertion"] != 0:
             continue
 
+        # Check the VAF's coverage and entropies fit the project requirements
         if (
             record["coverage"] < project.min_coverage
             or record["entropy"] < project.min_entropy
@@ -112,6 +113,7 @@ def generate(code, metadata):
         ):
             continue
 
+        # Find the dominant base and its confidence
         base_counts = {
             "A": record["a"],
             "C": record["c"],
@@ -131,15 +133,20 @@ def generate(code, metadata):
             record["base"] = None
             record["confidence"] = 0
 
+        # Get the corresponding reference object for the VAF, if not already retrieved
         if record["reference"] not in references:
             references[record["reference"]] = Reference.objects.get(
                 project=project, name=record["reference"]
             )
 
+        # Check for difference between ref_base and base
         ref_base = references[record["reference"]].sequence[record["position"] - 1]
-        diff = record["base"] and record["base"] != ref_base
+        diff = bool(record["base"] and record["base"] != ref_base)
 
-        if (project.diff_confidence is not None) and not (
+        # If the project requires VAFS with a difference from the reference, above a certain confidence,
+        # check that there is a difference, above the diff confidence threshold.
+        # If not, skip
+        if project.diff_confidence and not (
             diff and record["confidence"] >= project.diff_confidence
         ):
             continue
@@ -200,6 +207,7 @@ def store(args):
 
         # Create VAF instances
         for vaf in vafs:
+            print(vaf)
             VAF.objects.create(metadata=instance, **vaf)
 
         # Update Metadata instance with VAF summary statistics
